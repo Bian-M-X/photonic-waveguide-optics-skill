@@ -11,6 +11,8 @@ from unittest.mock import patch
 
 from photonic_workflow import __version__
 from photonic_workflow.cli import main
+from photonic_workflow.gates import GATE_DEFINITIONS
+from photonic_workflow.models import GateName
 
 FIXTURE_ROOT = Path(__file__).resolve().parents[1] / "fixtures"
 
@@ -97,6 +99,51 @@ class CliIntegrationTests(unittest.TestCase):
         )
         self.assertEqual((pdk_exit, pdk_error), (0, ""))
         self.assertTrue(json.loads(pdk_output)["data"]["valid"])
+
+    def test_gate_cli_records_mapped_hashed_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            project = Path(temporary) / "gate-project"
+            init_exit, _, init_error = invoke(["init", str(project), "--json"])
+            self.assertEqual((init_exit, init_error), (0, ""))
+            evidence = project / "verification" / "device-contract.md"
+            evidence.write_text("reviewed device contract\n", encoding="utf-8")
+
+            arguments = ["gate", "set", "G0", "pass"]
+            for requirement in GATE_DEFINITIONS[GateName.G0]["requires"]:
+                arguments.extend(
+                    ["--evidence", f"{requirement}=verification/device-contract.md"]
+                )
+            arguments.extend(
+                [
+                    "--reason",
+                    "device contract reviewed",
+                    "--next-action",
+                    "build port baseline",
+                    "--project-root",
+                    str(project),
+                    "--json",
+                ]
+            )
+            exit_code, output, error = invoke(arguments)
+            self.assertEqual((exit_code, error), (0, ""))
+            record = json.loads(output)["data"]["record"]
+            self.assertEqual(record["status"], "pass")
+            self.assertTrue(all("=sha256:" in item for item in record["evidence"]))
+
+            list_exit, list_output, list_error = invoke(
+                [
+                    "gate",
+                    "list",
+                    "--project-root",
+                    str(project),
+                    "--json",
+                ]
+            )
+            self.assertEqual((list_exit, list_error), (0, ""))
+            summary = json.loads(list_output)["data"]
+            self.assertTrue(summary["initialized"])
+            self.assertEqual(summary["gates"][0]["effective_status"], "pass")
+            self.assertTrue(summary["gates"][0]["evidence_references_resolved"])
 
     def test_missing_matlab_is_structured_unavailable(self) -> None:
         exit_code, output, error = invoke(

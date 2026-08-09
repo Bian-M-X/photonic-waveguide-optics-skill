@@ -8,6 +8,20 @@ the host package version.
 
 ### Changed
 
+- Split skill-internal gate use into lightweight advisory mode and claim-scoped
+  evidence mode, with composable base profiles and promotion/delivery overlays.
+- Replaced label-only gate evidence with project-relative, SHA-256-bound
+  `CHECK=PATH` evidence mappings for new PASS/N/A transitions; legacy records
+  remain readable but are reported as unverified rather than silently promoted.
+- Made passivity, reciprocity, unitarity, power closure, causality, convergence,
+  field review, and manufacturability checks conditional on the device physics
+  and the claim being promoted instead of universal entry requirements.
+- Documented COMSOL study-sequence, convergence, and export contracts without
+  claiming unverified renderer coverage, and clarified the current native-adjoint
+  boundary, evidence cadence, checkpointing, and concurrency expectations.
+- Repositioned the skill as a solver-agnostic, auditable photonic design and
+  closure workflow while retaining COMSOL as a bounded adapter and historical
+  repository name.
 - Tightened numeric-port and open-boundary selection guidance with an exact,
   fail-closed exterior partition audit derived from corrected SOI splitter
   modeling experience and reconciled with COMSOL's local cross-section model.

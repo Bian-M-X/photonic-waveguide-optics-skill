@@ -2,6 +2,20 @@
 
 Use this reference for 2D effective-index models, materials, geometry selections, numeric ports, boundary mode analysis, scattering/PML boundaries, mesh strategy, datasets, S-parameter expressions, and energy diagnostics.
 
+## Contents
+
+- [Model Scope Decision](#model-scope-decision)
+- [Materials And Geometry](#material-selection-audit)
+- [Numeric Port Setup](#numeric-port-setup)
+- [Study Sequence Contract](#study-sequence-contract)
+- [Boundary Conditions](#boundary-conditions)
+- [Mesh Strategy](#mesh-strategy)
+- [Convergence Contract](#convergence-contract)
+- [Postprocessing And Datasets](#postprocessing-expressions)
+- [Export Contract](#export-contract)
+- [Energy Diagnostics](#energy-diagnostics)
+- [Straight Waveguide Smoke Test](#straight-waveguide-smoke-test)
+
 ## Model Scope Decision
 
 Before building geometry, state the model class:
@@ -131,6 +145,38 @@ Frequency Domain Source Sweep. Independently rebuilt source cases may support
 per-column powers, but not complex reciprocity, singular-value, phase, or
 group-delay claims unless their gauges are explicitly aligned and audited.
 
+## Study Sequence Contract
+
+Treat the study graph as a reviewed contract, not an incidental Model Builder
+ordering. Record the COMSOL release, physics tag, study/step tags, port-to-mode
+bindings, source order, dataset tags, and intended exports before solving.
+
+For numeric ports:
+
+1. finalize geometry, selections, materials, boundaries/PML, ports, and mesh;
+2. add one Boundary Mode Analysis step per numeric port and bind it to exactly
+   that port;
+3. run or compile a no-driven-solve readback that verifies the ordered steps,
+   port bindings, search shift, requested mode count, normalization, and mesh;
+4. inspect and track the intended mode at every port using effective index,
+   field shape/overlap, polarization, confinement, and propagation direction;
+5. run the final Frequency Domain, Wavelength Domain, or
+   `FrequencyDomainSourceSweep` step only after the modal basis is accepted;
+6. bind tables and field plots to the final driven dataset, while keeping mode
+   plots on the corresponding boundary-mode datasets;
+7. invalidate the modal basis and repeat the checks after materials, boundaries,
+   ports, PML, geometry, or mesh change.
+
+A configuration readback proves only that the intended graph was built. A
+runtime smoke proves only that COMSOL started and produced fresh artifacts. A
+single driven solve is a physics canary. None of those alone proves convergence
+or component qualification.
+
+Do not publish a versioned Java study/mesh/export renderer until its exact
+COMSOL release passes `comsolcompile`, a no-solve API readback fixture, and a
+bounded driven smoke. Until then, keep handwritten Java project-local and
+reviewed against this contract rather than advertising an unverified template.
+
 ## Boundary Conditions
 
 Start with scattering/radiation boundaries for quick models. For engineering claims, compare:
@@ -183,6 +229,51 @@ Mesh refinement order:
 4. local bend refinement
 5. convergence check on key metrics
 
+For PML models, use the mesh topology required by the selected PML formulation
+and verify the PML coordinates and domain selections after geometry changes.
+COMSOL's Wave Optics physics-controlled mesh uses structured PML meshes by
+default: swept in 3D and mapped in 2D. A PML feature without the intended PML
+mesh, domain, and field-decay behavior is configuration evidence only.
+
+## Convergence Contract
+
+Declare the convergence family, metrics, and tolerances before reading the
+answer. Vary one numerical cause at a time so a stable scalar cannot hide
+compensating errors.
+
+Use independent families as applicable:
+
+- core/gap/bend mesh refinement;
+- port-window size and port-boundary resolution;
+- background-domain margin;
+- PML thickness, coordinate stretching, and PML mesh;
+- input/output straight length and reference-plane location;
+- wavelength/frequency sampling;
+- solver formulation or tolerance after the spatial model is stable.
+
+For each member record:
+
+```text
+family_id, member_id, changed_parameter, value
+geometry/material/physics/study/mesh hashes
+element counts, field DOF, mesh quality
+solver type, ordering, memory mode, convergence/exit markers
+wall time and peak memory when available
+mode identity and effective index at every port
+complex S entries, per-input power closure, and declared target metrics
+field-audit artifact and output hashes
+```
+
+Do not call two coincident values a convergence proof without a declared family
+and tolerance. A one-mesh solve remains `diagnostic`. For an improvement claim,
+show that numerical uncertainty is smaller than the claimed improvement. If a
+refinement changes the tracked mode, source basis, reference plane, or physical
+model, treat it as a new comparison problem rather than one convergence step.
+
+Run a resource-bounded canary before a large direct solve. A compile-only DOF
+count supports memory planning; it does not establish driven-source feasibility,
+field accuracy, PML effectiveness, or convergence.
+
 ## Postprocessing Expressions
 
 Use component prefixes when required:
@@ -230,6 +321,29 @@ and connected guide, with physically plausible evanescent tails and leakage.
 Broad high-amplitude background excitation or a field concentrated in an
 unrelated boundary/PML is a model error even if an S value looks attractive.
 
+## Export Contract
+
+Freeze exports before the final run. Every exported table or plot must identify:
+
+- model/run ID, COMSOL version, physics tag, study step, and dataset tag;
+- wavelength/frequency and source-solution index;
+- port order, mode labels, normalization, phase/time convention, and reference
+  planes;
+- raw real/imaginary S entries rather than power-only traces when a complex
+  multiport claim is intended;
+- per-input modal powers, signed non-port exterior flux, material absorption,
+  and closure residual with sign conventions;
+- mesh family/member, element count, field DOF, solver/termination markers, and
+  convergence status;
+- linear and log field views from the final driven dataset with geometry,
+  ports, scale, and the full exterior visible;
+- fresh artifact timestamps or pre/post signatures plus SHA-256 provenance.
+
+Exit code zero without every declared fresh export is an execution failure. A
+fresh export with internally consistent arithmetic can still be physically
+rejected. Keep configuration, execution, evidence-reference integrity,
+convergence, and physical acceptance as separate fields.
+
 ## Energy Diagnostics
 
 For a two-port reflected-output model:
@@ -267,3 +381,16 @@ Before building a complex device:
 6. Plot `comp1.<tag>.normE^2`.
 
 Only proceed to couplers and MZI devices after this passes.
+
+## Official Method References
+
+- COMSOL 6.4 documents that numeric ports obtain mode fields and propagation
+  constants from Boundary Mode Analysis:
+  <https://doc.comsol.com/6.4/doc/com.comsol.help.woptics/woptics_ug_modeling.5.34.html>.
+- COMSOL 6.4 documents the Wave Optics study types and the default structured
+  PML mesh behavior:
+  <https://doc.comsol.com/6.4/doc/com.comsol.help.woptics/woptics_ug_optics.6.02.html>.
+- COMSOL 6.4 changed the definition of total mode fields and excludes PML
+  domains from default field plots, so version and full-domain plot selections
+  must be recorded explicitly:
+  <https://doc.comsol.com/6.4/doc/com.comsol.help.comsol/comsol_release_text.06.107.html>.

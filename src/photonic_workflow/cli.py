@@ -997,7 +997,14 @@ def gate_list(project_root: Path | None, json_output: bool) -> None:
 @gate_group.command("set")
 @click.argument("gate", type=click.Choice([item.value for item in GateName], case_sensitive=False))
 @click.argument("status", type=click.Choice([item.value for item in GateStatus], case_sensitive=False))
-@click.option("--evidence", multiple=True)
+@click.option(
+    "--evidence",
+    multiple=True,
+    help=(
+        "Repeat CHECK=PROJECT_RELATIVE_PATH for pass; use "
+        "applicability=PROJECT_RELATIVE_PATH for not_applicable."
+    ),
+)
 @click.option("--metric", multiple=True, help="KEY=VALUE")
 @click.option("--reason", default="")
 @click.option("--next-action", default="")

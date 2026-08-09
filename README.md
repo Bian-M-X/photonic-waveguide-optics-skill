@@ -10,6 +10,26 @@
 
 **[English](README.md) | [简体中文](README.zh.md)**
 
+## What This Project Is
+
+`photonic-workflow` is an installable local runtime and agent skill for
+auditable photonic-integrated-circuit design closure. It connects design
+intent, component and compact-model contracts, complex S-parameter circuits,
+layout/netlist comparisons, bounded solver plans, optimization, packaging,
+tapeout, measurement, provenance, and evidence gates.
+
+The repository retains its historical COMSOL-oriented name, but the runtime is
+solver-agnostic. COMSOL, MATLAB, Lumerical, layout/PDK tools, instruments, and
+remote services are bounded adapters; this project does not replace an
+electromagnetic solver, foundry signoff, calibrated measurement, or engineering
+judgment.
+
+Use an `advisory` path for explanation, planning, read-only diagnosis, and
+preliminary screening without creating or advancing a gate ledger. Use the
+`evidence` path for solver execution, reusable model qualification, claim
+promotion, optimization winners, handoff, publication, tapeout, or measurement.
+Successful execution and physical acceptance remain separate in both paths.
+
 ## Showcase: Prompt-to-COMSOL SOI Euler 50:50 Splitter
 
 This public-safe test case shows how the skill turns a natural-language request
@@ -85,17 +105,9 @@ bookkeeping.
 > 2D EIM engineering result. Full component qualification remains blocked until
 > a same-model four-input complex S-matrix sweep, wavelength bandwidth,
 > boundary/PML sensitivity, fabrication corners, and 3D validation are supplied.
-
-`photonic-workflow` is an installable local Python runtime and Codex skill for
-auditable photonic-integrated-circuit design closure. It connects design
-intent, PDK aliases, component and compact-model contracts, complex
-S-parameter circuits, layout/netlist comparisons, solver plans, optimization,
-packaging, tapeout, measurement, provenance, and evidence gates.
-
-The runtime coordinates external tools; it does not replace an electromagnetic
-solver, a foundry PDK, DRC/LVS signoff, calibrated measurement, or engineering
-judgment. A successful command, import, dry-run, or attractive plot is never
-promoted automatically to physics evidence.
+> The committed images and summary are a sanitized reported showcase, not a
+> reproducible G8 evidence package. Local Java sources, solver logs, and raw
+> tables are not implied to be public artifacts.
 
 > Skill token: `$photonic-waveguide-optics`
 >

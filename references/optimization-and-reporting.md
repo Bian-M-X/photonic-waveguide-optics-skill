@@ -2,6 +2,20 @@
 
 Use this reference for parameter sweeps, inverse-design workflows, energy diagnostics, model comparison, 2D-to-3D progression, and reproducible reporting.
 
+## Contents
+
+- [Sweep Strategy](#sweep-strategy)
+- [Objective Functions](#objective-functions)
+- [Energy Diagnostics](#energy-diagnostics)
+- [External Optimization Loop](#external-optimization-loop)
+- [Design-Region Discipline](#design-region-discipline)
+- [Resolution Refinement](#resolution-refinement)
+- [Multi-Input Metric Interpretation](#multi-input-metric-interpretation)
+- [2D To 3D Progression](#2d-to-3d-progression)
+- [Visible Artifacts](#visible-artifacts-before-manufacturing-claims)
+- [Reporting Package](#reporting-package)
+- [Claim Labels](#claim-labels)
+
 ## Sweep Strategy
 
 Start small and increase cost only after each layer is validated:
@@ -98,6 +112,44 @@ For parameter sweeps or inverse design:
 5. Metrics are exported to stdout or CSV/TXT.
 6. Python aggregates, ranks, plots, and chooses next candidates.
 7. Best candidates and summaries are saved for restartability.
+
+The current runtime plans this external loop and records generic optimization
+contracts. It does not expose a native COMSOL/Lumerical/Tidy3D adjoint gradient,
+differentiate the solver, or provide a qualified topology optimizer. Treat
+`optimize run`/`resume` execution as unavailable until a backend-specific
+gradient interface, versioned fixture, failure cleanup, and claim boundary pass
+their adoption gate.
+
+### Evidence Cadence
+
+Do not create a full release package for every optimizer iteration. Freeze an
+evidence cadence before the search:
+
+- record every trial's ID, parameters, objective/constraint values, execution
+  state, and failure class in a compact append-only index;
+- retain restart checkpoints at the declared `checkpoint_interval`;
+- retain full solver artifacts only at declared milestones, anomalies, promoted
+  candidates, and final winners;
+- hash the optimizer specification, baseline, checkpoint state, and promotion
+  decision;
+- replay promoted candidates from the frozen specification before G7 passes.
+
+Evidence sampling reduces storage, not accountability. Missing intermediate
+artifacts must not be reconstructed or described as if they were retained.
+
+### Concurrency And Manufacturability
+
+Commercial solvers remain one worker by default. Increase `worker_count` only
+when license entitlement, per-worker prefs/config/tmp isolation, timeout and
+orphan cleanup, cost limits, and artifact attribution are explicitly
+authorized and tested. A cloud GPU service is not automatically exempt from
+cost, credential, tenant-isolation, or provenance controls.
+
+Before promoting an inverse-designed result, check the declared fabrication
+model: minimum feature and gap, curvature, connectivity, binarization/filter
+or projection settings, etch/layer constraints, and relevant process corners.
+These checks are hard only when manufacturability or tapeout readiness is
+claimed; exploratory optical screening remains labeled accordingly.
 
 For expensive or noisy objectives:
 

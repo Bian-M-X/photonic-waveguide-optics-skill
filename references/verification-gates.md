@@ -1,6 +1,110 @@
 # Verification Gates
 
-Use these gates to decide whether work can advance to a more expensive model or stronger claim. Record each gate as `pass`, `fail`, `blocked`, or `not_applicable` with artifact paths and numeric evidence.
+Use these gates only for evidence-bearing work that advances a project claim,
+executes an authorized workflow, or creates a formal deliverable. Advisory
+questions, read-only diagnosis, qualitative comparison, and preliminary
+screening do not require a ledger and must not change gate state.
+
+## Contents
+
+- [Choose The Active Profile](#choose-the-active-profile)
+- [Record Resolved Evidence](#record-resolved-evidence)
+- [Apply Physical Checks Conditionally](#apply-physical-checks-conditionally)
+- [G0-G8 Design Gates](#g0-device-contract)
+- [Minimum Gate Ledger](#minimum-gate-ledger)
+
+## Choose The Active Profile
+
+Freeze the intended claim, then evaluate only the smallest profile that covers
+it. Gates outside the active profile remain inactive; do not set them to
+`not_applicable` merely to make a dashboard green.
+
+| Base profile | Required gates |
+|---|---|
+| component qualification | G0 and G2; G1 is conditional on solver ports or driven-wave evidence |
+| circuit qualification | component plus G3-G4 |
+| layout/tapeout claim | circuit plus G5 |
+| calibrated measurement | M0-M2 |
+| simulation/measurement correlation | M0-M3 |
+| recalibrated model release | M0-M4 |
+
+Compose the base with only the required overlay:
+
+| Overlay | Required gate |
+|---|---|
+| promoted higher-fidelity/full-wave comparison | G6 |
+| optimization or robustness promotion | G7 |
+| formal handoff or publication | G8 |
+
+Every defining gate in a selected base or overlay must have
+`effective_status=pass`. A conditionally applicable gate such as G1 may use a
+hashed `not_applicable` rationale when the frozen claim genuinely does not rely
+on that physics. This prevents both over-gating unrelated work and completing a
+component profile with G2 marked `not_applicable`.
+
+Small solver diagnostics still obey authorization, dry-run, path, license,
+resource, and concurrency rules, but they do not earn a gate `pass` by default.
+
+## Record Resolved Evidence
+
+For a new `pass`, provide one mapping for every requirement shown by
+`photonic gate list --json`:
+
+```powershell
+photonic gate set G0 pass `
+  --evidence topology=requirements/device-contract.md `
+  --evidence ports=requirements/device-contract.md `
+  --evidence band=requirements/device-contract.md `
+  --evidence stack=requirements/device-contract.md `
+  --evidence modes=requirements/device-contract.md `
+  --evidence metrics=requirements/device-contract.md `
+  --evidence tolerances=requirements/device-contract.md `
+  --evidence claim=requirements/device-contract.md
+```
+
+The runtime requires each mapped path to be nonempty, readable,
+project-relative, and inside the project root. It stores a SHA-256 with every
+mapping and derives an `effective_status`; a deleted or changed artifact blocks
+that effective status while preserving the recorded historical status.
+The live `verification/gates.json` file cannot be its own hashed evidence,
+because recording a gate changes that file. Export an immutable project-relative
+ledger snapshot or handoff manifest and map the `ledger` requirement to that
+snapshot instead.
+
+Legacy ledgers with unkeyed paths remain readable and keep their recorded
+status, but report `evidence_policy=legacy-unverified`. Use
+`all_gates_evidence_verified` or the selected `closure_profiles` result for new
+automation. The compatibility field `all_gates_passed` reports recorded status
+only and is not scientific acceptance.
+
+Use gate-level `not_applicable` only when the gate definition permits it. Record
+exactly one `applicability=<project-relative-file>` mapping and a reason. A
+resolved path and hash prove evidence-reference integrity, not that the file is
+scientifically correct; physical review remains separate.
+
+## Apply Physical Checks Conditionally
+
+Do not create one universal "physics passed" switch. Classify each check by the
+frozen device physics and intended claim.
+
+| Check | Hard when | Diagnostic, inconclusive, or not applicable when |
+|---|---|---|
+| structure, units, source-column mapping, complex-power arithmetic, nonfinite values | always for the artifact that uses that contract | never waive silently |
+| per-input power/energy accounting | a solver-derived passive, active, or lossy claim reports power flow | exploratory single-point work may report it as diagnostic; account for radiation, absorption, PML, and gain rather than forcing modal sums to one |
+| passivity | the component or network is declared passive and normalization/channels are complete | active/gain devices require a gain/stability budget instead |
+| reciprocity | materials, bias, modulation, and time variation imply reciprocity | nonreciprocal or time-varying devices require their declared asymmetry test instead |
+| unitarity | the model is lossless and every propagating channel is represented | lossy, radiative, absorbing, gain, truncated-mode, or incomplete-channel models |
+| mesh/boundary/port/domain convergence | a 2D EIM or 3D solver result is promoted quantitatively, compared at G6, or used to claim an optimization improvement | advisory screening or a declared single-mesh diagnostic |
+| analytic/reduced-model comparison | G0 freezes a valid benchmark, applicability envelope, metric, and tolerance | otherwise use it as a trend or anomaly diagnostic, not a universal equality gate |
+| causality/Kramers-Kronig | a broadband compact model or time-domain release has sufficient sampling, reference-plane convention, extrapolation/fitting method, and an error contract | a single wavelength, sparse/narrow band, or data with uncontrolled truncation/discretization; return `inconclusive`, not false failure |
+| field-image sanity | a final driven-field dataset exists | visual plausibility never earns a pass alone, but an unexplained red flag vetoes promotion |
+| manufacturability | layout, tapeout, or an inverse-designed winner claims fabrication readiness | topology or optical screening without a fabrication claim |
+
+Automation is an interceptor, not the final physical referee. For an
+inapplicable conditional check, preserve an explicit rationale artifact. For a
+missing required check use `blocked`; for a completed check outside tolerance
+use `fail`; for bandwidth/discretization-limited causality or ambiguous visual
+evidence use `inconclusive` in the artifact and keep the gate `blocked`.
 
 ## G0 Device Contract
 
@@ -34,6 +138,9 @@ Require:
 - reference-plane locations recorded.
 
 This gate establishes the normalization inherited by all component models.
+The runtime requirement list also includes mode identity, exterior partition,
+source/common-basis evidence, per-input power, and the final driven-field audit;
+one attractive S value cannot cover those checks implicitly.
 
 ## G2 Component Qualification
 
@@ -42,7 +149,8 @@ For every reusable block require:
 - complete complex multiport S matrix over the declared band;
 - correct mode label for every port;
 - passivity check for passive components;
-- reciprocity check when physically expected;
+- reciprocity class and check when physically expected, or evidence for the
+  declared nonreciprocal behavior;
 - per-input energy budget;
 - geometry/process parameters and model level;
 - mesh, boundary, wavelength-step, and port-reference checks;
@@ -72,7 +180,7 @@ Require:
 
 - external S matrix generated over the target band;
 - passive-network singular value within tolerance;
-- expected reciprocity/nonreciprocity behavior;
+- expected reciprocity/nonreciprocity behavior or an active-network gain budget;
 - correct qualitative transfer function;
 - energy accounting per independent input;
 - wavelength resolution sufficient for narrow features;
@@ -114,8 +222,11 @@ Require:
 
 - objective and constraints recorded before optimization;
 - baseline preserved;
+- checkpoint/evidence-sampling policy recorded;
 - nominal and corner results separated;
 - mesh/solver noise smaller than claimed improvement;
+- minimum-feature, filtering/projection, and process checks when
+  manufacturability is claimed;
 - winner re-evaluated at the highest validated fidelity;
 - local-search results not called globally optimal.
 
@@ -134,11 +245,27 @@ Require:
 
 ## Minimum Gate Ledger
 
-```text
-gate,status,evidence,metric_or_reason,next_action
-G0,pass,requirements/device-contract.md,band=1500-1600 nm,build baseline
-G1,pass,verification/straight-waveguide.json,max_R11=...,qualify components
-G2,blocked,components/dc/verification.md,mesh convergence missing,refine gap mesh
+```json
+{
+  "gate": "G1",
+  "status": "pass",
+  "effective_status": "pass",
+  "evidence_policy": "mapped-sha256",
+  "evidence_references_resolved": true,
+  "next_action": "qualify the component"
+}
 ```
 
-Never convert missing evidence into a pass by inference.
+Keep the detailed requirement-to-artifact mappings in `verification/gates.json`.
+Never convert missing evidence, a legacy unkeyed path, or a diagnostic-only
+physical check into a pass by inference.
+
+## Method References
+
+- scikit-rf exposes passivity evaluation for a fitted scattering model rather
+  than treating every raw finite-band trace as a universal passivity proof:
+  <https://scikit-rf.readthedocs.io/en/v1.12.0/api/generated/skrf.vectorFitting.VectorFitting.is_passive.html>.
+- Ansys documents that finite bandwidth, sampling, discretization, fitting
+  error, and unavailable out-of-band data affect causality conclusions; use this
+  to justify `inconclusive` rather than a blanket Kramers-Kronig hard failure:
+  <https://ansyshelp.ansys.com/public/Views/Secured/Electronics/v252/en/Subsystems/Circuit/Content/Circuit/CausalityPassivityandFittingErrorsFAQs.htm>.

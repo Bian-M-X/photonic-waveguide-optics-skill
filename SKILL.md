@@ -1,31 +1,51 @@
 ---
 name: photonic-waveguide-optics
-description: Design, validate, compose, debug, optimize, and report auditable photonic integrated circuits. Use for waveguides, bends, tapers, couplers, splitters, rings, gratings, MZI/aMZI/LT-aMZI, sensors, modulators, compact models, complex optical S parameters, PDK/layout/netlist workflows, COMSOL Wave Optics Java and batch work, MATLAB-assisted legacy or numerical workflows, robustness, packaging, tapeout, measurement correlation, and evidence-gated handoffs.
+description: Auditable photonic-integrated-circuit design and closure workflow with COMSOL, MATLAB, Lumerical, layout, PDK, measurement, and other tools treated as bounded adapters. Use for advisory analysis or evidence-bearing design, validation, composition, debugging, optimization, reporting, waveguides, bends, tapers, couplers, splitters, rings, gratings, MZI/aMZI/LT-aMZI, sensors, modulators, compact models, complex optical S parameters, solver automation, layout/netlists, robustness, packaging, tapeout, and measurement correlation.
 ---
 
-# Photonic Waveguide Optics
+# Photonic Workflow Design and Closure
 
 Build an auditable path from design intent to qualified components, composed
 circuits, layout/connectivity evidence, selected full-wave checks, and
 measurement correlation. Use the installed `photonic` runtime as the business
 entry point and treat external tools as bounded adapters.
 
-## Start Every Task
+## Choose The Engagement Mode
 
-1. Read the user-specified project, handoff, model, paper, or repository first.
-2. Identify the latest trusted run, current G0-G8/M0-M4 ledger, unresolved
-   blockers, and exact next action.
-3. Classify the request as `design`, `reproduce`, `debug`, `compose`,
+Classify the task before opening or changing a gate ledger.
+
+| Mode | Use when | Gate behavior |
+|---|---|---|
+| `advisory` | explanation, planning, read-only review, code/model diagnosis, qualitative comparison, or preliminary screening with no claim promotion | Do not create or update G/M records. State assumptions and label conclusions `exploratory` or `diagnostic`. |
+| `evidence` | solver execution, reusable model qualification, convergence or optimization claims, gate changes, cross-tool handoff, publication, tapeout, or measurement | Freeze the claim and apply only the relevant G/M profile. Missing required evidence is `blocked`, never an inferred pass. |
+
+Use `advisory` when the user asks only a question or review. Move to `evidence`
+when the requested action or deliverable crosses a claim, execution, or release
+boundary. Authorization, privacy, license, path, concurrency, and publication
+guardrails apply in both modes.
+
+For `advisory` work:
+
+1. Read the user-specified artifact first.
+2. Freeze the question, material assumptions, model class, and maximum supportable
+   evidence level; do not demand a full device contract when it is irrelevant.
+3. Choose the lowest-cost modeling and evidence level that can answer the question.
+4. Do not mark an absent project ledger `blocked`; report what would be required
+   before promoting the result.
+
+For `evidence` work:
+
+1. Read the project and latest handoff; identify trusted runs, active claim
+   profile, unresolved blockers, and the exact next action.
+2. Classify the request as `design`, `reproduce`, `debug`, `compose`,
    `validate`, `optimize`, `layout`, `tapeout`, `measure`, or `report`.
-4. Freeze the intended claim, device ports, band, modes/polarization, process
-   stack or PDK alias, metrics, tolerances, and evidence level.
-5. Choose the lowest-cost model that can answer the question.
-6. Verify capabilities before using optional tools. Keep implementation,
-   availability, execution, and physical acceptance separate.
-
-Do not begin a large full-wave solve or optimization before the
-straight-waveguide/port baseline and critical building blocks are qualified.
-Missing evidence is `blocked`, never an inferred pass.
+3. Freeze ports, band, modes/polarization, process stack or PDK alias, metrics,
+   tolerances, and evidence level.
+4. Verify capabilities before optional tools. Keep implementation,
+   availability, execution, evidence-reference resolution, and physical
+   acceptance separate.
+5. Do not begin a large full-wave solve or optimization before the relevant
+   straight-waveguide/port baseline and critical building blocks are qualified.
 
 ## Route to the Required Material
 
@@ -44,7 +64,7 @@ Read the minimum relevant set, but read each selected file completely.
 | Current PIC tool research | `docs/research/tool-landscape.md` |
 | Current MATLAB tool research | `docs/research/matlab-tool-landscape.md` |
 | Solver paths, Java compilation, batch execution | `references/environment-and-runner.md` |
-| Materials, ports, mode studies, mesh, datasets | `references/wave-optics-port-models.md` |
+| Materials, ports, study order, mesh/convergence, datasets, exports | `references/wave-optics-port-models.md` |
 | COMSOL mode/field images and physical sanity | `references/comsol-field-physical-audit.md` |
 | Complete complex S matrices and source sweeps | `references/frequency-domain-source-sweeps.md` |
 | Waveguides, bends, tapers, couplers, rings, gratings | `references/device-family-workflows.md` |
@@ -52,7 +72,7 @@ Read the minimum relevant set, but read each selected file completely.
 | Circular/Euler bends and path length | `references/smooth-bend-geometry.md` |
 | Versioned reusable geometry, port, material, and S-matrix recipes | `references/modeling-recipes.md` |
 | Hierarchical circuits and layout/netlists | `references/hierarchical-device-workflow.md` |
-| Gates and claim boundaries | `references/verification-gates.md` |
+| Gate profiles, evidence syntax, conditional physics checks | `references/verification-gates.md` |
 | Sweeps, optimization, robustness, reports | `references/optimization-and-reporting.md` |
 | Project artifacts, git, handoffs | `references/project-structure-and-git.md` |
 | MCP vs batch vs interactive control | `references/comsol-mcp-evaluation.md` |
@@ -217,6 +237,9 @@ Define objectives, constraints, budgets, failure handling, and robustness
 variables before searching. Preserve the baseline and checkpoints. Re-evaluate
 winners at higher fidelity and relevant process/temperature corners. A local,
 heuristic, surrogate, or noisy search winner is not a proved global optimum.
+The current runtime plans external parameter or pixel loops; it does not provide
+a native adjoint gradient interface or a qualified topology optimizer. Do not
+claim those capabilities until a backend-specific adoption gate and fixture pass.
 
 ### 8. Inspect, gate, and hand off
 
@@ -224,19 +247,23 @@ Execution status and acceptance status are independent. Inspect artifacts,
 hashes, units, conventions, convergence, tolerances, and limitations before
 changing a gate.
 
-Use:
+Select the smallest base profile that covers the intended claim:
 
-- G0 device contract;
-- G1 port and straight-waveguide baseline;
-- G2 component qualification;
-- G3 assembly contract;
-- G4 circuit behavior;
-- G5 layout and connectivity;
-- G6 promoted full-wave subassembly;
-- G7 robustness and optimization;
-- G8 reproducible evidence package;
-- M0-M4 for test readiness, raw integrity, calibrated measurement,
-  correlation, and model recalibration.
+- component: G0 and G2, plus G1 when the claim relies on solver ports or driven waves;
+- circuit: component plus G3-G4;
+- layout/tapeout: circuit plus G5;
+- measurement: M0-M2, plus M3 for correlation and M4 for recalibrated release.
+
+Add only the overlays the claim needs: G6 for a promoted higher-fidelity
+comparison, G7 for an optimization/robustness promotion, and G8 for formal
+delivery or publication. A defining gate in a selected base or overlay must
+`pass`; `not_applicable` is not a shortcut to profile completion.
+
+Leave gates outside the active profile inactive. Use `not_applicable` only where
+the gate definition permits it and record hashed applicability evidence. For a
+new `pass`, map every declared requirement to a nonempty project-relative file;
+the runtime records its SHA-256. A resolved evidence reference proves neither
+the file's scientific meaning nor physical acceptance.
 
 Handoff scripts/contracts, manifests, logs, tables, plots, run/gate state,
 limitations, and the exact next safe action. Keep proprietary or heavy
