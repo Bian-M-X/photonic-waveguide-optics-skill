@@ -9,7 +9,7 @@ interactive vendor APIs, the `photonic` CLI, and the local MCP transport.
 |---|---|---|
 | `photonic` CLI | Workflow authority for contracts, status, validation, composition, audit, and bounded plans | A successful command is workflow evidence, not solver or physics evidence |
 | Java API source + `comsolcompile` + `comsolbatch` | Trusted local COMSOL execution route after explicit review and authorization | Requires declared outputs, logs, convergence, mesh/boundary/mode checks, and independent acceptance |
-| `photonic-workflow` MCP 0.4.0 | Narrow assistant integration for resources and non-executing package services | No COMSOL, MATLAB, instrument, Python, or shell execution |
+| `photonic-workflow` MCP 0.5.0 | Narrow assistant integration for resources and non-executing package services | No COMSOL, MATLAB, instrument, Python, or shell execution |
 | `mphserver` / LiveLink-style control | Optional stateful Phase C integration | Unverified until version, lifecycle, cleanup, redaction, failure, and parity adoption gates pass |
 
 MCP is a transport over the same package services used by the CLI. It is not a
@@ -19,7 +19,7 @@ second workflow authority and does not replace direct batch execution.
 
 The compatibility launcher is `scripts/mcp_photonic_server.py`; the package
 implementation is `photonic_workflow.mcp.server`. The stdio server speaks
-JSON-RPC 2.0 and reports package/server version `0.4.0`.
+JSON-RPC 2.0 and reports package/server version `0.5.0`.
 
 ### Resources
 
@@ -38,11 +38,15 @@ wheel instead of maintaining a second hard-coded resource count.
 
 ### Tools
 
-The current surface contains exactly 10 narrow tools:
+The current development surface contains 13 narrow tools. Query the live
+manifest: an already-running server may still expose an earlier surface.
 
 | Tool | Operation |
 |---|---|
 | `list_allowed_roots` | Return separate read and write roots |
+| `list_recipes` | List compact identities/versions of built-in modeling recipes |
+| `inspect_recipe` | Read one exact recipe contract, units, limits and provenance |
+| `render_recipe` | Create a new canonical JSON or fixed Java artifact; return a compact hash receipt |
 | `create_project_scaffold` | Create a package-based project scaffold without copying business logic |
 | `audit_project_artifacts` | Scan eligible files completely for blocked or sensitive artifacts |
 | `parse_sweep_table` | Validate a legacy COMSOL scalar sweep and write bounded summaries |
@@ -56,6 +60,17 @@ The current surface contains exactly 10 narrow tools:
 `run_java_batch` rejects non-dry-run and execution-enabling flags. Its result
 must report `will_execute: false` and `execution_enabled: false`. Keep the name
 only for compatibility; do not describe it as solver execution.
+
+Recipe tools reuse the CLI's catalog, numerical functions, renderers and output
+path policy. `render_recipe` accepts strict versioned request files, refuses
+overwrites and output links/junctions, and keeps generated arrays/code outside
+the response. Read/write roots remain separate; no solver process or gate
+mutation is added. See [modeling-recipes.md](modeling-recipes.md).
+
+All tools declare MCP `readOnlyHint`, `destructiveHint`, `idempotentHint` and
+`openWorldHint`. File-writing operations are not marked read-only. These hints
+assist tool selection; path checks and non-execution rules remain enforced
+independently. No protocol-version change is needed for these 2025-06-18 fields.
 
 ## Security Contract
 
@@ -85,6 +100,7 @@ counterparts.
 
 - initialization and strict invalid-request handling;
 - exact resource/tool discovery and source-sweep reference access;
+- recipe discovery, strict request handling, and bounded artifact receipt;
 - server-manifest readback;
 - safe sweep parsing, strict JSON, plateau/descending spectra, and zero spectra;
 - unsafe output-label rejection;
@@ -97,6 +113,10 @@ counterparts.
 This is protocol and service-parity evidence only. It is not a COMSOL
 installation probe, license check, compile/run smoke, source-sweep parity, PML
 validation, modal alignment proof, field-accuracy result, or convergence study.
+
+`tests/integration/test_mcp_recipes.py` additionally compares all six recipe
+artifacts with CLI output, checks Java rendering without process startup, and
+tests rejected inputs, separated roots, no overwrite and compact responses.
 
 ## Why Direct Batch Remains the Execution Baseline
 
@@ -180,6 +200,7 @@ validation.
 
 - Tools: `https://modelcontextprotocol.io/specification/2025-06-18/server/tools`
 - Resources: `https://modelcontextprotocol.io/specification/2025-06-18/server/resources`
+- Tool annotations: [2025-06-18 schema](https://modelcontextprotocol.io/specification/2025-06-18/schema#toolannotations), checked 2026-09-05.
 
 Refresh these links and the protocol version before changing the transport
 contract.

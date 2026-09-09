@@ -161,6 +161,30 @@ def main() -> None:
                     "params": {"uri": "photonic://server/manifest"},
                 },
             )
+            recipes = send(proc, {
+                "jsonrpc": "2.0", "id": 40, "method": "tools/call",
+                "params": {"name": "list_recipes", "arguments": {}},
+            })
+            recipe_request = temp_dir / "recipe-request.json"
+            recipe_request.write_text(json.dumps({
+                "schema_version": "1.0", "recipe_id": "materials.li-silicon-1980",
+                "recipe_version": "1.0.0", "parameters": {"wavelength_um": 1.55},
+            }), encoding="utf-8")
+            recipe = send(proc, {
+                "jsonrpc": "2.0", "id": 41, "method": "tools/call",
+                "params": {"name": "render_recipe", "arguments": {
+                    "request_file": str(recipe_request), "output": str(temp_dir / "material.json"),
+                }},
+            })
+            recipe_receipt = recipe["result"]["structuredContent"]
+            if (
+                len(recipes["result"]["structuredContent"]["recipes"]) != 6
+                or not recipe_receipt["written"]
+                or recipe_receipt["will_execute"]
+                or recipe_receipt["physics_accepted"]
+                or not (temp_dir / "material.json").is_file()
+            ):
+                raise RuntimeError("MCP recipe protocol smoke failed")
             parsed = send(
                 proc,
                 {
@@ -346,6 +370,7 @@ def main() -> None:
         "source_sweep_reference_verified": True,
         "modeling_recipe_reference_verified": True,
         "field_physics_reference_verified": True,
+        "recipe_artifact_verified": True,
         "tool_names": [tool["name"] for tool in tools["result"]["tools"]],
         "manifest_bytes": len(manifest["result"]["contents"][0]["text"]),
         "parse_summary": summary,

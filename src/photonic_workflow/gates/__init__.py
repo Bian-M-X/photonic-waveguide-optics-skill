@@ -1,3 +1,3 @@
-from .service import GATE_DEFINITIONS, GateLedger
+from .service import GATE_DEFINITIONS, GATE_PROFILES, GateLedger
 
-__all__ = ["GATE_DEFINITIONS", "GateLedger"]
+__all__ = ["GATE_DEFINITIONS", "GATE_PROFILES", "GateLedger"]

@@ -142,9 +142,33 @@ by the Run service; readers must not use it as a third independent state. Gate
 `blocked` represents missing evidence, while acceptance remains `pending` until
 an evaluation is recorded.
 
-Gate records use `pass`, `fail`, `blocked`, or `not_applicable`; a pass requires
-explicit evidence. If a historical claim lacks the required artifacts, import
-it as `blocked` or `unverified`, not pass.
+Gate records use `pass`, `fail`, `blocked`, or `not_applicable`. New accepted
+records map every declared requirement with
+`CHECK=PROJECT_RELATIVE_PATH`; the Gate service canonicalizes each mapping with
+the file's SHA-256. Gate-level `not_applicable` uses the single
+`applicability=PROJECT_RELATIVE_PATH` mapping only where the gate definition
+allows it.
+
+Historical unkeyed evidence paths remain readable and preserve the recorded
+status for audit compatibility. They report `effective_status=unverified` and
+`evidence_policy=legacy-unverified`, and they cannot satisfy the new
+`all_gates_evidence_verified` or closure-profile aggregate. Migrate them by:
+
+1. selecting the active claim profile;
+2. reading the current requirement keys from `photonic gate list --json`;
+3. mapping every applicable requirement to a nonempty project-relative source
+   artifact;
+4. recording a new gate revision so the runtime captures current hashes;
+5. independently reviewing scientific content before calling the result
+   physically accepted.
+
+If a historical claim lacks the required artifacts, keep it `blocked` or
+legacy-unverified; do not invent mappings or infer a pass.
+
+Historical `not_applicable` records with no evidence are also retained as
+legacy-unverified. New N/A transitions require a hashed applicability artifact.
+Do not map a requirement to the live `verification/gates.json`; export a
+separate immutable snapshot so the ledger cannot invalidate its own digest.
 
 M0-M4 are new measurement gates and do not replace G0-G8. Existing measurement
 files remain uncalibrated/unverified until raw integrity, calibration,

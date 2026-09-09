@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 
-__version__ = "0.4.0"
+__version__ = "0.5.0"
 
 
 def compatible_minor_requirement(

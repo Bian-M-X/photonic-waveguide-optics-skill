@@ -82,10 +82,13 @@ claims still require their separate Phase B/C evidence.
 
 ## GitHub publication controls
 
-Keep the branch-protection context `validate` stable. It is an aggregate job
-that fails unless every current core matrix lane and the installed-artifact
-lane succeeds. Add or remove implementation lanes behind that aggregate
-instead of renaming the required context whenever the Python matrix changes.
+Do not assume a branch-protection context from documentation or a green badge.
+This repository currently has no checked-in aggregate job named `validate`.
+Before changing or relying on branch protection, query the active GitHub branch
+protection/rulesets and compare their required contexts with the actual workflow
+job names. If a stable aggregate context is desired, implement and test that job
+first, then configure the remote rule in a separate administrator-approved
+change. Never configure a required context that no workflow emits.
 
 Publish through a pull request from an `agent/*` branch. Before pushing:
 
@@ -97,7 +100,7 @@ Publish through a pull request from an `agent/*` branch. Before pushing:
 4. verify local signatures when used, then run artifact audit and
    `git diff --check`;
 5. push without force, open a draft pull request, and wait for every status
-   check before merging;
+   check emitted for the branch before merging;
 6. query the final remote mainline commit and require GitHub's verification
    record to report `verified=true` before announcing the release.
 

@@ -13,10 +13,21 @@ from photonic_workflow import __version__
 from photonic_workflow.application import ProjectStatusService
 from photonic_workflow.audit import audit_project_artifacts
 from photonic_workflow.circuits import compose, validate_manifest, write_composition
+from photonic_workflow.exceptions import InvalidInputError
 from photonic_workflow.gates import GateLedger
 from photonic_workflow.models import WorkflowProfile
-from photonic_workflow.models.io import load_contract
+from photonic_workflow.models.io import atomic_create_text, load_contract
 from photonic_workflow.project import create_project_scaffold
+from photonic_workflow.provenance import sha256_file
+from photonic_workflow.recipes import (
+    RecipeRenderer,
+    inspect_recipe,
+    list_recipes,
+    load_recipe_request,
+    provenance_for,
+    render_recipe,
+)
+from photonic_workflow.recipes.artifacts import checked_recipe_output
 from photonic_workflow.security import (
     ensure_within_allowed_roots,
     redact_text,
@@ -37,6 +48,7 @@ REFERENCE_RESOURCES = {
         "comsol-mcp-evaluation",
         "comsol-field-physical-audit",
         "device-family-workflows",
+        "engineering-workflow",
         "environment-and-runner",
         "frequency-domain-source-sweeps",
         "hierarchical-device-workflow",
@@ -49,6 +61,7 @@ REFERENCE_RESOURCES = {
         "smooth-bend-geometry",
         "source-notes",
         "subagent-orchestration",
+        "tool-selection",
         "verification-gates",
         "wave-optics-port-models",
     )
@@ -114,11 +127,20 @@ def _tool(
     description: str,
     properties: dict[str, Any],
     required: list[str] | None = None,
+    *,
+    read_only: bool = False,
+    destructive: bool = True,
 ) -> dict[str, Any]:
     return {
         "name": name,
         "title": title,
         "description": description,
+        "annotations": {
+            "readOnlyHint": read_only,
+            "destructiveHint": False if read_only else destructive,
+            "idempotentHint": read_only,
+            "openWorldHint": False,
+        },
         "inputSchema": {
             "type": "object",
             "properties": properties,
@@ -266,7 +288,40 @@ class PhotonicMcpServer:
     def tool_list(self) -> list[dict[str, Any]]:
         path = {"type": "string"}
         return [
-            _tool("list_allowed_roots", "List roots", "List distinct read and write roots.", {}),
+            _tool("list_allowed_roots", "List roots", "List distinct read and write roots.", {}, read_only=True),
+            _tool(
+                "list_recipes",
+                "List modeling recipes",
+                "List compact recipe identities and summaries; inspect one recipe for its parameter contract.",
+                {},
+                read_only=True,
+            ),
+            _tool(
+                "inspect_recipe",
+                "Inspect modeling recipe",
+                "Read one built-in recipe's version, units, parameter bounds, renderers and provenance; no solver.",
+                {"recipe_id": {"type": "string"}, "version": {"type": "string"}},
+                ["recipe_id"],
+                read_only=True,
+            ),
+            _tool(
+                "render_recipe",
+                "Write modeling recipe artifact",
+                "Evaluate a strict versioned recipe file and create a new JSON or fixed Java fragment. "
+                "Returns a compact hash receipt; refuses overwrite; never compiles, solves or changes gates.",
+                {
+                    "request_file": {"type": "string", "description": "Absolute path under a read root."},
+                    "output": {"type": "string", "description": "New absolute file path under a write root."},
+                    "renderer": {
+                        "type": "string",
+                        "enum": [item.value for item in RecipeRenderer],
+                        "default": RecipeRenderer.CANONICAL_JSON.value,
+                    },
+                    "instance_id": {"type": "string", "description": "Safe instance ID; required for Java only."},
+                },
+                ["request_file", "output"],
+                destructive=False,
+            ),
             _tool(
                 "create_project_scaffold",
                 "Create project scaffold",
@@ -284,6 +339,7 @@ class PhotonicMcpServer:
                 "Read every eligible text file and report blocked or sensitive artifacts.",
                 {"project_root": path, "large_file_mb": {"type": "integer", "default": 25}},
                 ["project_root"],
+                read_only=True,
             ),
             _tool(
                 "parse_sweep_table",
@@ -303,6 +359,7 @@ class PhotonicMcpServer:
                 "Validate a versioned JSON contract using the shared Pydantic registry.",
                 {"contract_file": path, "expected_type": {"type": "string"}},
                 ["contract_file"],
+                read_only=True,
             ),
             _tool(
                 "inspect_project",
@@ -310,6 +367,7 @@ class PhotonicMcpServer:
                 "Return bounded gate and project-state metadata.",
                 {"project_root": path},
                 ["project_root"],
+                read_only=True,
             ),
             _tool(
                 "validate_circuit",
@@ -317,6 +375,7 @@ class PhotonicMcpServer:
                 "Validate assembly v1 structure and complete complex S matrices.",
                 {"manifest": path, "structure_only": {"type": "boolean", "default": False}},
                 ["manifest"],
+                read_only=True,
             ),
             _tool(
                 "compose_circuit",
@@ -331,6 +390,7 @@ class PhotonicMcpServer:
                 "Read G0-G8 and M0-M4 without changing the ledger.",
                 {"project_root": path},
                 ["project_root"],
+                read_only=True,
             ),
             _tool(
                 "run_java_batch",
@@ -347,6 +407,7 @@ class PhotonicMcpServer:
                     "allow_execute": {"type": "boolean", "default": False},
                 },
                 ["java_file", "output_mph", "batch_log", "runtime_dir"],
+                read_only=True,
             ),
         ]
 
@@ -368,9 +429,70 @@ class PhotonicMcpServer:
             "trace_csv": str(trace_csv),
         }
 
+    def _render_recipe(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        request_path = Path(arguments["request_file"])
+        output = Path(arguments["output"])
+        if not request_path.is_absolute() or not output.is_absolute():
+            raise McpError("recipe request_file and output must be absolute paths", code=-32602)
+        request_path = self._read_path(str(request_path))
+        checked = self._write_path(str(output))
+        root = next(root for root in self.write_roots if checked.is_relative_to(root))
+        checked, _ = checked_recipe_output(root, output)
+        request = load_recipe_request(request_path)
+        rendered = render_recipe(
+            request.recipe_id,
+            request.parameters,
+            version=request.recipe_version,
+            renderer=arguments.get("renderer", RecipeRenderer.CANONICAL_JSON.value),
+            instance_id=arguments.get("instance_id"),
+        )
+        try:
+            atomic_create_text(
+                checked,
+                rendered.content,
+                path_guard=lambda candidate: checked_recipe_output(root, candidate),
+            )
+        except FileExistsError as exc:
+            raise InvalidInputError("recipe output already exists; choose a new artifact path") from exc
+        if sha256_file(checked) != rendered.sha256:
+            raise InvalidInputError("written recipe output failed SHA-256 verification")
+        return {
+            "recipe_id": request.recipe_id,
+            "recipe_version": request.recipe_version,
+            "artifact_path": str(checked),
+            "renderer_id": rendered.renderer.value,
+            "media_type": rendered.media_type,
+            "sha256": rendered.sha256,
+            "byte_count": rendered.byte_count,
+            "output_fields": sorted(rendered.result.output),
+            "support_level": rendered.result.descriptor.support_level.value,
+            "claim_boundary": list(rendered.result.descriptor.claim_boundary),
+            "written": True,
+            "will_execute": False,
+            "physics_accepted": False,
+        }
+
     def tool_call(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         arguments = self._validate_tool_arguments(name, arguments)
         handlers: dict[str, Callable[[], Any]] = {
+            "list_recipes": lambda: {
+                "recipes": [
+                    {
+                        "recipe_id": item.recipe_id,
+                        "recipe_version": item.recipe_version,
+                        "summary": item.summary,
+                        "support_level": item.support_level.value,
+                    }
+                    for item in list_recipes()
+                ],
+                "will_execute": False,
+                "physics_accepted": False,
+            },
+            "inspect_recipe": lambda: {
+                **inspect_recipe(arguments["recipe_id"], version=arguments.get("version")).to_payload(),
+                "provenance": provenance_for(arguments["recipe_id"]),
+            },
+            "render_recipe": lambda: self._render_recipe(arguments),
             "list_allowed_roots": lambda: {
                 "read_roots": [str(root) for root in self.read_roots],
                 "write_roots": [str(root) for root in self.write_roots],

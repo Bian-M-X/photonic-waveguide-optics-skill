@@ -2078,6 +2078,7 @@
       "photonic://skill/reference/comsol-field-physical-audit",
       "photonic://skill/reference/comsol-mcp-evaluation",
       "photonic://skill/reference/device-family-workflows",
+      "photonic://skill/reference/engineering-workflow",
       "photonic://skill/reference/environment-and-runner",
       "photonic://skill/reference/frequency-domain-source-sweeps",
       "photonic://skill/reference/hierarchical-device-workflow",
@@ -2090,6 +2091,7 @@
       "photonic://skill/reference/smooth-bend-geometry",
       "photonic://skill/reference/source-notes",
       "photonic://skill/reference/subagent-orchestration",
+      "photonic://skill/reference/tool-selection",
       "photonic://skill/reference/verification-gates",
       "photonic://skill/reference/wave-optics-port-models",
       "photonic://skill/agent/code-auditor",
@@ -2107,6 +2109,57 @@
         "type": "object",
         "properties": {},
         "required": [],
+        "additionalProperties": false
+      },
+      "list_recipes": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "inspect_recipe": {
+        "type": "object",
+        "properties": {
+          "recipe_id": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "recipe_id"
+        ],
+        "additionalProperties": false
+      },
+      "render_recipe": {
+        "type": "object",
+        "properties": {
+          "request_file": {
+            "type": "string",
+            "description": "Absolute path under a read root."
+          },
+          "output": {
+            "type": "string",
+            "description": "New absolute file path under a write root."
+          },
+          "renderer": {
+            "type": "string",
+            "enum": [
+              "canonical-json",
+              "comsol-java-fragment"
+            ],
+            "default": "canonical-json"
+          },
+          "instance_id": {
+            "type": "string",
+            "description": "Safe instance ID; required for Java only."
+          }
+        },
+        "required": [
+          "request_file",
+          "output"
+        ],
         "additionalProperties": false
       },
       "create_project_scaffold": {

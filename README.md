@@ -10,6 +10,63 @@
 
 **[English](README.md) | [简体中文](README.zh.md)**
 
+## What This Project Is
+
+`photonic-workflow` is an installable local runtime and agent skill for
+auditable photonic-integrated-circuit design closure. It connects design
+intent, component and compact-model contracts, complex S-parameter circuits,
+layout/netlist comparisons, bounded solver plans, optimization, packaging,
+tapeout, measurement, provenance, and evidence gates.
+
+The repository retains its historical COMSOL-oriented name, but the runtime is
+solver-agnostic. COMSOL, MATLAB, Lumerical, layout/PDK tools, instruments, and
+remote services are bounded adapters; this project does not replace an
+electromagnetic solver, foundry signoff, calibrated measurement, or engineering
+judgment.
+
+## New in 0.5.0: Task-Scoped Engineering
+
+The skill starts from the requested model, code or data and loads the relevant
+reference. It gives capable agents room to choose useful experiments while
+keeping physical claims tied to inspected evidence.
+
+| Work mode | Example | Required process |
+|---|---|---|
+| `advisory` | Explain FSR, review Java, diagnose a plot | State assumptions; no gate ledger |
+| `exploratory` | Run an authorized single-point solve or coarse parameter search | Record settings, outputs and limits; no gate ledger unless the project requires it |
+| `evidence` | Accept a reusable S model, calibrated measurement or layout check | Select the claim's acceptance profile and inspect its evidence |
+
+These are skill routing modes, not command-line flags. An unresolved G1 does
+not prevent an otherwise authorized diagnostic; a project-specific rule such
+as "no optimization before G1" still applies. A successful solve is an
+observation, not automatic qualification.
+
+**Engineering gates retained:** port/mode/reference-plane consistency, complete
+complex S data for scattering-model reuse, per-input power accounting,
+claim-relevant convergence, immutable measurement provenance, and SHA-256-bound
+evidence. Passivity, reciprocity, unitarity, 3D comparison and fabrication
+corners apply when the declared physics and claim require them. Tolerances come
+from the decision and uncertainty budget, not a universal numerical threshold.
+
+**Process reduced:** no universal G0-to-G8 execution sequence, mandatory ledger
+for exploration, or G8 package for routine answers/software releases. New
+`layout-connectivity` (G0/G5) and `measurement-capture` (M0/M1) profiles accept
+narrow claims without implying optical/tapeout or calibrated-measurement
+acceptance. Existing profile meanings and persisted gate schemas are unchanged.
+Unselected blocked gates are not a global stop signal; record the selected
+profiles in the project contract or handoff.
+
+**Tools and structure:** a compact entrypoint, on-demand qualification/tool
+references, and three new MCP tools—`list_recipes`, `inspect_recipe`,
+`render_recipe`—expose six existing deterministic recipes. The server now has
+13 tools and 29 resources. Rendering creates bounded files; it does not execute
+a solver. Direct, authorized Java/Python/MATLAB model development remains
+available beyond recipe coverage.
+
+Read the [gate definitions](references/verification-gates.md),
+[tool-selection guide](references/tool-selection.md), and
+[engineering-gate review](docs/research/engineering-gates-0.5-review.md).
+
 ## Showcase: Prompt-to-COMSOL SOI Euler 50:50 Splitter
 
 This public-safe test case shows how the skill turns a natural-language request
@@ -84,28 +141,21 @@ bookkeeping.
 > **Claim boundary:** this is a single-input, single-wavelength, preliminary
 > 2D EIM engineering result. Full component qualification remains blocked until
 > a same-model four-input complex S-matrix sweep, wavelength bandwidth,
-> boundary/PML sensitivity, fabrication corners, and 3D validation are supplied.
-
-`photonic-workflow` is an installable local Python runtime and Codex skill for
-auditable photonic-integrated-circuit design closure. It connects design
-intent, PDK aliases, component and compact-model contracts, complex
-S-parameter circuits, layout/netlist comparisons, solver plans, optimization,
-packaging, tapeout, measurement, provenance, and evidence gates.
-
-The runtime coordinates external tools; it does not replace an electromagnetic
-solver, a foundry PDK, DRC/LVS signoff, calibrated measurement, or engineering
-judgment. A successful command, import, dry-run, or attractive plot is never
-promoted automatically to physics evidence.
+> and boundary/PML sensitivity are supplied. Fabrication-robustness and physical
+> 3D-stack claims additionally need the relevant corners and 3D validation.
+> The committed images and summary are a sanitized reported showcase, not a
+> reproducible G8 evidence package. Local Java sources, solver logs, and raw
+> tables are not implied to be public artifacts.
 
 > Skill token: `$photonic-waveguide-optics`
 >
 > Python package and CLI: `photonic-workflow` / `photonic`
 >
-> Current package version: `0.4.0` (alpha)
+> Current package version: `0.5.0` (alpha)
 >
 > Repository: `Bian-M-X/comsol-photonic-waveguide-optics-skill`
 
-## What Version 0.4.0 Provides
+## What Version 0.5.0 Provides
 
 | Surface | Current role |
 |---|---|
@@ -115,7 +165,7 @@ promoted automatically to physics evidence.
 | Reusable modeling recipes | Versioned, fail-closed circular/Euler geometry, segmented port windows, bulk material dispersion, and common-basis two-port diagnostics distilled from reviewed LT-aMZI workflows |
 | External backends | Capability probes and bounded plans; commercial execution remains separately authorized and test-gated |
 | MATLAB | Phase A check, inventory, plan, controlled-wrapper, result, and Engine-probe surfaces; real local smoke belongs to Phase B |
-| MCP | Dependency-light stdio JSON-RPC transport whose manifest enumerates all registered skill resources and 10 narrow tools; no solver, MATLAB, instrument, or arbitrary-shell execution |
+| MCP | Dependency-light stdio JSON-RPC transport whose manifest enumerates all registered skill resources and 13 narrow tools; no solver, MATLAB, instrument, or arbitrary-shell execution |
 | Legacy entry points | Existing Python and PowerShell commands remain compatibility entry points while package-service parity is regression-tested |
 | Research record | Official/project-maintained source surveys for PIC and MATLAB tools with explicit local and physics verification boundaries |
 
@@ -391,7 +441,8 @@ transport. The current version exposes:
 
 - resources declared by one authoritative registry: one server manifest, every
   registered reference document, and every bounded agent role contract;
-- 10 tools: `list_allowed_roots`, `create_project_scaffold`,
+- 13 tools in the development tree: `list_recipes`, `inspect_recipe`,
+  `render_recipe`, `list_allowed_roots`, `create_project_scaffold`,
   `audit_project_artifacts`, `parse_sweep_table`, `validate_contract`,
   `inspect_project`, `validate_circuit`, `compose_circuit`, `gate_status`, and
   the compatibility-named `run_java_batch`.
@@ -405,6 +456,13 @@ working directory or a source checkout. `PHOTONIC_SKILL_ROOT` remains an
 explicit override for a reviewed skill tree.
 
 See `references/comsol-mcp-evaluation.md` for the adoption boundary.
+
+The skill entrypoint routes by the requested artifact and loads detailed
+qualification guidance only when needed. Recipe tools expose the existing
+reviewed numerical catalog through compact discovery and file-based output;
+their results do not pass a physics gate. See `references/tool-selection.md`
+for CLI fallbacks, optional integrations and primary-source research, and
+`docs/research/skill-refactor-review.md` for the refactor assessment.
 
 ## Legacy Compatibility
 
