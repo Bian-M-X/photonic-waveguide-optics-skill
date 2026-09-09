@@ -60,7 +60,13 @@ def main() -> int:
         *(f"photonic://skill/agent/{name}" for name in AGENT_RESOURCES),
     }
     actual_resource_uris = {resource["uri"] for resource in resources}
-    if actual_resource_uris != expected_resource_uris or len(tools) != 10:
+    expected_tools = {
+        "list_allowed_roots", "list_recipes", "inspect_recipe", "render_recipe",
+        "create_project_scaffold", "audit_project_artifacts", "parse_sweep_table",
+        "validate_contract", "inspect_project", "validate_circuit", "compose_circuit",
+        "gate_status", "run_java_batch",
+    }
+    if actual_resource_uris != expected_resource_uris or {item["name"] for item in tools} != expected_tools:
         raise RuntimeError(
             "unexpected MCP surface: "
             f"{len(resources)} resources, {len(tools)} tools; "
@@ -82,6 +88,17 @@ def main() -> int:
             manifest, data = validate_manifest(project / "circuits" / "assembly.json")
             if len(manifest["instances"]) != 4 or len(data) != 2:
                 raise RuntimeError("installed MZI template did not validate")
+            recipe_server = PhotonicMcpServer(skill_root, [outside], [outside])
+            request = outside / "material-request.json"
+            request.write_text(json.dumps({
+                "schema_version": "1.0", "recipe_id": "materials.li-silicon-1980",
+                "recipe_version": "1.0.0", "parameters": {"wavelength_um": 1.55},
+            }), encoding="utf-8")
+            receipt = recipe_server.tool_call("render_recipe", {
+                "request_file": str(request), "output": str(outside / "material.json"),
+            })["structuredContent"]
+            if not receipt["written"] or receipt["physics_accepted"] or receipt["will_execute"]:
+                raise RuntimeError("installed recipe result violated its claim boundary")
         finally:
             os.chdir(original_cwd)
 
@@ -93,6 +110,7 @@ def main() -> int:
                 "mcp_tool_count": len(tools),
                 "packaged_skill_root": skill_root.name,
                 "template_smoke": "passed",
+                "recipe_smoke": "passed",
             },
             indent=2,
             allow_nan=False,

@@ -40,6 +40,18 @@ from photonic_workflow.recipes import (
 The CLI and Python API call the same frozen catalog. Legacy scripts are thin
 compatibility launchers and must not carry a second algorithm implementation.
 
+MCP also exposes `list_recipes`, `inspect_recipe`, and `render_recipe`. List
+returns compact identities; inspect returns one full parameter/provenance
+contract. Render takes an absolute `request_file` and new absolute `output`
+under separately allowed read/write roots, plus optional `renderer` and
+`instance_id`. The default renderer is `canonical-json`; Java uses the same
+fixed renderer and limits as the CLI. A successful render returns an artifact
+path, SHA-256, byte count, output field names and claim limits. Read the file
+for arrays or source; the response intentionally omits those large payloads.
+No project scaffold is required for MCP recipe evaluation. Existing outputs
+are never replaced, and output symlinks/junctions are rejected. An older live
+MCP server may need a restart; use the CLI if these tools are absent.
+
 ## Built-In Recipes
 
 | Recipe ID | Role | Highest code evidence | Explicit boundary |

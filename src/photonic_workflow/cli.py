@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import os
 import platform
-import stat
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
@@ -25,7 +24,6 @@ from .exceptions import (
     ExitCode,
     InvalidInputError,
     PhotonicWorkflowError,
-    SecurityViolationError,
     UnavailableCapabilityError,
 )
 from .gates import GateLedger
@@ -74,7 +72,7 @@ from .recipes import (
     provenance_for,
     render_recipe,
 )
-from .security import ensure_within_allowed_roots
+from .recipes.artifacts import checked_recipe_output as _checked_recipe_output
 from .solvers import build_java_batch_plan
 from .workflows import backannotate_waveguide_lengths, compare_netlists, validate_netlist
 
@@ -582,33 +580,6 @@ def layout_compare(left: Path, right: Path, json_output: bool) -> None:
         compare_layout_manifests(left_model, right_model),
         json_output=json_output,
     )
-
-
-def _checked_recipe_output(project_root: Path, output: Path) -> tuple[Path, str]:
-    root = project_root.resolve()
-    candidate = output if output.is_absolute() else root / output
-    lexical = Path(os.path.abspath(candidate))
-    checked = ensure_within_allowed_roots(lexical, [root])
-    if checked == root:
-        raise InvalidInputError("recipe output must be a file below project root")
-
-    reparse_flag = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
-    cursor = lexical
-    while os.path.normcase(str(cursor)) != os.path.normcase(str(root)):
-        if cursor.exists() or cursor.is_symlink():
-            details = cursor.lstat()
-            attributes = getattr(details, "st_file_attributes", 0)
-            if cursor.is_symlink() or attributes & reparse_flag:
-                raise SecurityViolationError(
-                    f"recipe output path contains a symlink or junction: {cursor}"
-                )
-        parent = cursor.parent
-        if parent == cursor:
-            raise InvalidInputError("recipe output is not lexically below project root")
-        cursor = parent
-    return checked, checked.relative_to(root).as_posix()
-
-
 @cli.group("recipe")
 def recipe_group() -> None:
     """Inspect and render deterministic, non-executing modeling recipes."""

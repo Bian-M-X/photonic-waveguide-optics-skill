@@ -6,8 +6,33 @@ the host package version.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-09-09
+
+### Added
+
+- Separate `layout-connectivity` (G0/G5) and `measurement-capture` (M0/M1)
+  acceptance profiles, with tests preventing broader claim promotion and
+  invalidation checks when evidence changes.
+- MCP recipe discovery, single-recipe inspection and bounded artifact rendering
+  through existing deterministic services, with no-overwrite output protection
+  and CLI parity tests. The MCP surface grows from 10 to 13 tools.
+- Task-oriented tool selection, a focused primary-source integration survey,
+  and an on-demand engineering qualification reference.
+
 ### Changed
 
+- Added an explicit exploratory route for authorized diagnostic solves and
+  searches without mandatory gate ledgers. Gates govern acceptance, while
+  stricter project prerequisites continue to apply. Documented claim-specific
+  tolerances, conditional fidelity/corners, and the scope of G2/G8.
+- Updated English and Chinese README guidance and versioned provider examples;
+  retained gate schemas, existing profile meanings and backend-adoption checks.
+- Updated CI's MCP tool-count assertion and require the recipe artifact smoke.
+- Reduced the skill entrypoint from 302 to about 130 lines; route by the requested
+  artifact and load only relevant references. Clarified that public adapter
+  restrictions do not prohibit authorized task-specific model programming.
+- Added explicit MCP side-effect annotations and shared the recipe output-path
+  policy between CLI and MCP without changing numerical algorithms or gates.
 - Split skill-internal gate use into lightweight advisory mode and claim-scoped
   evidence mode, with composable base profiles and promotion/delivery overlays.
 - Replaced label-only gate evidence with project-relative, SHA-256-bound
@@ -74,5 +99,6 @@ Implementation and validation: OpenAI Codex.
   required normal interactive Windows context. LiveLink, Lumerical, instruments,
   and real PDK/DRC/LVS integrations remain separate Phase C adoption gates.
 
-[Unreleased]: https://github.com/Bian-M-X/comsol-photonic-waveguide-optics-skill/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/Bian-M-X/comsol-photonic-waveguide-optics-skill/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/Bian-M-X/comsol-photonic-waveguide-optics-skill/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Bian-M-X/comsol-photonic-waveguide-optics-skill/releases/tag/v0.4.0

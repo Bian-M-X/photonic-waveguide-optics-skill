@@ -18,7 +18,11 @@ Use this reference for parameter sweeps, inverse-design workflows, energy diagno
 
 ## Sweep Strategy
 
-Start small and increase cost only after each layer is validated:
+Start small and increase cost when the previous result justifies it. The
+following is a useful progression, not a mandatory ordering for every device.
+Authorized exploratory searches do not need G7 or a completed G1 unless the
+project explicitly imposes that prerequisite. Keep candidate rankings
+diagnostic until the relevant baseline, convergence and uncertainty checks pass.
 
 1. single wavelength
 2. short coarse wavelength sweep

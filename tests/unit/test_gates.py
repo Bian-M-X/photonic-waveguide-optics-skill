@@ -25,6 +25,62 @@ def _pass_evidence(gate: GateName, relative: str) -> list[str]:
 
 
 class GateLedgerTests(unittest.TestCase):
+    def test_profile_inventory_does_not_initialize_an_exploratory_ledger(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            ledger = GateLedger(Path(temporary))
+            summary = ledger.summary()
+            self.assertFalse(summary["initialized"])
+            self.assertFalse(summary["ledger_semantics"]["exploratory_requires_ledger"])
+            self.assertFalse(summary["ledger_semantics"]["profile_selection_is_persisted"])
+            self.assertFalse(ledger.path.exists())
+
+    def test_scoped_profiles_do_not_promote_broader_claims(self) -> None:
+        cases = (
+            ("layout-connectivity", (GateName.G0, GateName.G5), "layout-tapeout"),
+            ("measurement-capture", (GateName.M0, GateName.M1), "measurement"),
+        )
+        for profile, gates, broader in cases:
+            with self.subTest(profile=profile), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                evidence = _artifact(root)
+                ledger = GateLedger(root)
+                for gate in gates:
+                    ledger.update(
+                        gate, GateStatus.PASS,
+                        evidence=_pass_evidence(gate, evidence),
+                        reason="scoped evidence reviewed", next_action="report scoped claim",
+                    )
+                profiles = ledger.summary()["closure_profiles"]
+                self.assertTrue(profiles[profile]["all_required_gates_evidence_verified"])
+                self.assertFalse(profiles[broader]["all_required_gates_evidence_verified"])
+                self.assertEqual(profiles[profile]["conditionally_applicable_gates"], [])
+                (root / evidence).write_text("changed evidence\n", encoding="utf-8")
+                self.assertFalse(
+                    ledger.summary()["closure_profiles"][profile][
+                        "all_required_gates_evidence_verified"
+                    ]
+                )
+
+    def test_layout_connectivity_cannot_close_with_g5_not_applicable(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            evidence = _artifact(root)
+            ledger = GateLedger(root)
+            ledger.update(
+                GateName.G0, GateStatus.PASS, evidence=_pass_evidence(GateName.G0, evidence),
+                reason="contract reviewed", next_action="check layout",
+            )
+            ledger.update(
+                GateName.G5, GateStatus.NOT_APPLICABLE,
+                evidence=[f"applicability={evidence}"],
+                reason="no layout claim", next_action="do not select layout profile",
+            )
+            self.assertFalse(
+                ledger.summary()["closure_profiles"]["layout-connectivity"][
+                    "all_required_gates_evidence_verified"
+                ]
+            )
+
     def test_gate_definition_snapshot_covers_g_and_measurement_tracks(self) -> None:
         self.assertEqual(
             [gate.value for gate in GATE_DEFINITIONS],

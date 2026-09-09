@@ -21,9 +21,40 @@
 MATLAB、Lumerical、版图/PDK 工具、仪器和远程服务都只是受限 adapter；本项目
 不替代电磁求解器、晶圆厂签核、校准测量或工程师的物理裁决。
 
-解释、规划、只读诊断和初步筛选走 `advisory` 路径，不创建或推进 gate ledger；
-求解器执行、可复用模型资格认证、声明晋级、优化赢家、交付、发布、流片或测量
-走 `evidence` 路径。两条路径都严格区分“执行成功”和“物理验收”。
+## 0.5.0 更新：按任务选择工程验收范围
+
+新版从用户指定的模型、代码或数据出发，按需读取参考资料，让具备较强判断力的
+模型选择能解决问题的实验，同时保持结论与实际证据相匹配。
+
+| 工作模式 | 示例 | 所需流程 |
+|---|---|---|
+| `advisory` | 解释 FSR、审阅 Java、诊断场图 | 说明假设，无需门限台账 |
+| `exploratory` | 已授权的单点求解、粗参数搜索 | 记录设置、输出与限制；除非项目明确要求，否则无需门限台账 |
+| `evidence` | 验收可复用 S 模型、校准测量或布局连接 | 选择对应声明的验收范围，逐项审阅证据 |
+
+这些是 skill 的任务路由模式，不是 CLI 参数。G1 尚未通过不会阻止已获授权的
+诊断实验；项目明确规定的“G1 前禁止优化”等要求仍然有效。求解成功是一项观察，
+不会自动成为器件资格通过的依据。
+
+**保留的门限：**端口、模式及参考面一致性，可复用散射模型的完整复数 S 数据，
+逐输入功率核算，与声明相匹配的收敛检查，不可变测量来源，以及 SHA-256 绑定的
+证据。无源性、互易性、幺正性、三维比对与工艺角按物理条件和声明适用；数值容差
+由决策需求和误差预算确定，不设全器件通用阈值。
+
+**精简的流程：**不再把 G0–G8 当作所有任务的执行顺序，不要求探索实验先建台账，
+也不要求普通回答或软件发布提交 G8 工程证据包。新增 `layout-connectivity`
+（G0/G5）与 `measurement-capture`（M0/M1），分别支持布局连接和原始测量采集的
+独立验收；它们不代表光学/流片或校准测量通过。原有 profile 的含义与持久化 schema
+保持兼容；未选择的门显示 `blocked` 不代表整个项目停工，应在契约或交接记录中写明
+本次选择的 profile。
+
+**工具与结构：**精简入口，按需加载工程验收及工具选择参考；MCP 新增
+`list_recipes`、`inspect_recipe`、`render_recipe`，复用已有六类确定性配方。
+当前共 13 个工具、29 个资源。渲染只生成受约束文件，不执行求解器；超出配方覆盖的
+建模工作仍可通过已授权的 Java/Python/MATLAB 开发流程完成。
+
+详见[门限定义](references/verification-gates.md)、[工具选择](references/tool-selection.md)
+和[工程门限评估](docs/research/engineering-gates-0.5-review.md)。
 
 ## 效果展示：从提示词到 COMSOL SOI 欧拉弯 50:50 分束器
 
@@ -80,7 +111,7 @@ MATLAB、Lumerical、版图/PDK 工具、仪器和远程服务都只是受限 ad
 
 能量从 P3 向 P4 单调转移，符合倏逝场定向耦合的物理预期。工作流先冻结器件契约和验收规则，再验证直波导/数值端口基线，检查端口与开放边界选择是否互斥且完备，筛选耦合长度，对选定结构执行细网格复算，最后审计两种场图与功率账本。
 
-> **结论边界：**这是单输入、单波长、初步的二维 EIM 工程结果。完整器件资格仍为 `blocked`；尚需同一模型四个独立输入的复数 S 矩阵波长扫描、带宽、边界/PML 敏感性、工艺角和三维验证。
+> **结论边界：**这是单输入、单波长、初步的二维 EIM 工程结果。完整器件资格仍为 `blocked`；尚需同一模型四个独立输入的复数 S 矩阵波长扫描、带宽和边界/PML 敏感性。若要进一步声明工艺鲁棒性或真实三维堆栈性能，还需对应工艺角和三维验证。
 >
 > 当前提交中的图片和摘要是经公开清理的展示材料，不是可复现的 G8 证据包；
 > 不能据此推断本地 Java 源码、求解日志或原始表格已经公开。
@@ -89,11 +120,11 @@ MATLAB、Lumerical、版图/PDK 工具、仪器和远程服务都只是受限 ad
 >
 > Python 包与 CLI：`photonic-workflow` / `photonic`
 >
-> 当前包版本：`0.4.0`（alpha）
+> 当前包版本：`0.5.0`（alpha）
 >
 > 仓库：`Bian-M-X/comsol-photonic-waveguide-optics-skill`
 
-## 0.4.0 版本提供的能力
+## 0.5.0 版本提供的能力
 
 | 能力面 | 当前职责 |
 |---|---|
@@ -103,7 +134,7 @@ MATLAB、Lumerical、版图/PDK 工具、仪器和远程服务都只是受限 ad
 | 可复用建模配方 | 从已审查 LT-aMZI 工作流提炼并版本化的圆弯/欧拉弯几何、分段端口窗口、体材料色散和公共基底双端口诊断；默认 fail-closed |
 | 外部后端 | 能力探测与受限计划；商业软件的实际执行仍需单独授权并通过测试门 |
 | MATLAB | Phase A 检查、清单、计划、受控 wrapper、结果与 Engine 探测界面；真实本地 smoke test 属于 Phase B |
-| MCP | 低依赖 stdio JSON-RPC 传输；manifest 列出全部已注册 skill 资源和 10 个窄接口工具；不执行求解器、MATLAB、仪器或任意 shell |
+| MCP | 低依赖 stdio JSON-RPC 传输；manifest 列出全部已注册 skill 资源，有 13 个窄接口工具；不执行求解器、MATLAB、仪器或任意 shell |
 | 旧入口 | 在包服务等价性回归测试期间，保留现有 Python 与 PowerShell 命令作为兼容入口 |
 | 研究记录 | 官方/项目维护的 PIC 与 MATLAB 工具调研，明确区分本地可用性和物理验证边界 |
 
@@ -323,7 +354,13 @@ $env:PHOTONIC_SOLVER_ROOT = 'C:\Path\To\LicensedSolverRoot'
 `scripts/mcp_photonic_server.py` 是包传输层的兼容启动器。当前版本提供：
 
 - 由单一权威 registry 声明的资源：一个 server manifest、所有已注册参考文档，以及所有受限 agent role contract；
-- 10 个工具：`list_allowed_roots`、`create_project_scaffold`、`audit_project_artifacts`、`parse_sweep_table`、`validate_contract`、`inspect_project`、`validate_circuit`、`compose_circuit`、`gate_status`，以及为兼容保留名称的 `run_java_batch`。
+- 有 13 个工具：新增 `list_recipes`、`inspect_recipe`、`render_recipe`，以及原有 `list_allowed_roots`、`create_project_scaffold`、`audit_project_artifacts`、`parse_sweep_table`、`validate_contract`、`inspect_project`、`validate_circuit`、`compose_circuit`、`gate_status` 和为兼容保留名称的 `run_java_batch`。
+
+入口按用户指定的模型、代码或数据选择参考资料；完整资格验证流程按需读取。
+新增配方工具复用已有数值实现，返回紧凑目录或带 SHA-256 的文件回执，
+不把生成配置视为物理验证。工具选择与官方资料调研见
+`references/tool-selection.md`，重构审阅说明见
+`docs/research/skill-refactor-review.md`。已运行的旧 MCP 进程仍需重启才能重新发现工具。
 
 `run_java_batch` 只渲染脱敏的 dry-run 计划。MCP 不暴露任意 shell/Python/MATLAB 执行，也不实际执行求解器或仪器。读根目录与写根目录分开；未配置可写根目录时写操作失败。已安装 wheel 包含所有 MCP 参考资料和 agent 资源的只读镜像，因此 `photonic-mcp` 不依赖当前工作目录或源码 checkout。`PHOTONIC_SKILL_ROOT` 仍可作为指向经审查 skill 树的显式覆盖。
 

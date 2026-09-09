@@ -1,302 +1,132 @@
 ---
 name: photonic-waveguide-optics
-description: Auditable photonic-integrated-circuit design and closure workflow with COMSOL, MATLAB, Lumerical, layout, PDK, measurement, and other tools treated as bounded adapters. Use for advisory analysis or evidence-bearing design, validation, composition, debugging, optimization, reporting, waveguides, bends, tapers, couplers, splitters, rings, gratings, MZI/aMZI/LT-aMZI, sensors, modulators, compact models, complex optical S parameters, solver automation, layout/netlists, robustness, packaging, tapeout, and measurement correlation.
+description: Design, debug, simulate, and qualify integrated photonic devices and circuits, including COMSOL wave-optics models, modal ports, complex S parameters, and layout or measurement handoffs. Use for PIC engineering work that needs explicit modeling assumptions and evidence limits.
 ---
 
-# Photonic Workflow Design and Closure
+# Photonic Waveguide Optics
 
-Build an auditable path from design intent to qualified components, composed
-circuits, layout/connectivity evidence, selected full-wave checks, and
-measurement correlation. Use the installed `photonic` runtime as the business
-entry point and treat external tools as bounded adapters.
+Use engineering judgment to advance the user's requested PIC task. This skill
+supplies reusable numerical tools and the non-obvious constraints that protect
+optical results. It does not require the full qualification workflow for every
+question, code edit, or diagnostic experiment.
 
-## Choose The Engagement Mode
+## Start at the requested artifact
 
-Classify the task before opening or changing a gate ledger.
+Read the named model, code, data, or latest project handoff first. Identify the
+question, available evidence, and next discriminating action. Reuse established
+project conventions and authorization; ask only for information that changes
+the result, cost, or permitted scope. Do not scaffold a project just to answer
+a question or inspect a model.
 
-| Mode | Use when | Gate behavior |
+| Mode | Appropriate work | Evidence handling |
 |---|---|---|
-| `advisory` | explanation, planning, read-only review, code/model diagnosis, qualitative comparison, or preliminary screening with no claim promotion | Do not create or update G/M records. State assumptions and label conclusions `exploratory` or `diagnostic`. |
-| `evidence` | solver execution, reusable model qualification, convergence or optimization claims, gate changes, cross-tool handoff, publication, tapeout, or measurement | Freeze the claim and apply only the relevant G/M profile. Missing required evidence is `blocked`, never an inferred pass. |
+| `advisory` | explanation, planning, code/model review or repair | State assumptions and limits. No G/M ledger is required. |
+| `exploratory` | authorized diagnostic solves, geometry trials, coarse sweeps or candidate searches | Record the question, run settings and observations. No G/M ledger is required unless the project explicitly requires one. Label results diagnostic. |
+| `evidence` | acceptance of a reusable model, performance or robustness claim, layout check, measurement or formal engineering delivery | Select the smallest applicable acceptance profile. Missing evidence blocks the dependent claim, not unrelated useful work. |
 
-Use `advisory` when the user asks only a question or review. Move to `evidence`
-when the requested action or deliverable crosses a claim, execution, or release
-boundary. Authorization, privacy, license, path, concurrency, and publication
-guardrails apply in both modes.
+These modes describe work, not CLI flags. Gates constrain acceptance, not
+permission to investigate. Follow stricter project-specific prerequisites;
+never reinterpret a project rule such as "no optimization before G1" as waived.
 
-For `advisory` work:
+For a diagnostic run, record the model level, excitation, changed variables,
+outputs, and question being tested. For qualification, additionally freeze the
+ports/modes, band, process stack, reference planes, metrics, and tolerances.
+Preserve a paper-faithful baseline separately from engineering optimization.
 
-1. Read the user-specified artifact first.
-2. Freeze the question, material assumptions, model class, and maximum supportable
-   evidence level; do not demand a full device contract when it is irrelevant.
-3. Choose the lowest-cost modeling and evidence level that can answer the question.
-4. Do not mark an absent project ledger `blocked`; report what would be required
-   before promoting the result.
+## Read only the relevant route
 
-For `evidence` work:
+Choose the matching row and inspect the relevant sections, including their
+prerequisites. Expand reading when dependencies or contradictions require it;
+do not load the entire reference library or all agent cards by default.
 
-1. Read the project and latest handoff; identify trusted runs, active claim
-   profile, unresolved blockers, and the exact next action.
-2. Classify the request as `design`, `reproduce`, `debug`, `compose`,
-   `validate`, `optimize`, `layout`, `tapeout`, `measure`, or `report`.
-3. Freeze ports, band, modes/polarization, process stack or PDK alias, metrics,
-   tolerances, and evidence level.
-4. Verify capabilities before optional tools. Keep implementation,
-   availability, execution, evidence-reference resolution, and physical
-   acceptance separate.
-5. Do not begin a large full-wave solve or optimization before the relevant
-   straight-waveguide/port baseline and critical building blocks are qualified.
-
-## Route to the Required Material
-
-Read the minimum relevant set, but read each selected file completely.
-
-| Task | Read |
+| Current task | Start here |
 |---|---|
-| Runtime, CLI, runs, phases | `docs/architecture/runtime-design.md`, `docs/roadmap.md` |
-| Adapter and contract policy | `docs/architecture/adapter-contract.md`, `docs/architecture/design-intent.md` |
-| Third-party adapter provider | `docs/providers/authoring-third-party-adapter.md` |
-| PDK and compact-model lifecycle | `docs/architecture/pdk-model.md`, `docs/architecture/compact-model-lifecycle.md` |
-| MATLAB integration or security | `docs/architecture/matlab-integration.md`, `docs/architecture/matlab-security.md` |
-| Provenance or migration | `docs/architecture/provenance.md`, `docs/migration.md` |
-| Runtime upgrades, compatibility, packaged resources | `docs/maintenance.md` |
-| PDK/layout/custom/MATLAB/tapeout workflows | matching file under `docs/workflows/` |
-| Current PIC tool research | `docs/research/tool-landscape.md` |
-| Current MATLAB tool research | `docs/research/matlab-tool-landscape.md` |
-| Solver paths, Java compilation, batch execution | `references/environment-and-runner.md` |
-| Materials, ports, study order, mesh/convergence, datasets, exports | `references/wave-optics-port-models.md` |
-| COMSOL mode/field images and physical sanity | `references/comsol-field-physical-audit.md` |
-| Complete complex S matrices and source sweeps | `references/frequency-domain-source-sweeps.md` |
-| Waveguides, bends, tapers, couplers, rings, gratings | `references/device-family-workflows.md` |
-| MZI, aMZI, LT-aMZI, couplers, FSR | `references/interferometer-workflows.md` |
-| Circular/Euler bends and path length | `references/smooth-bend-geometry.md` |
-| Versioned reusable geometry, port, material, and S-matrix recipes | `references/modeling-recipes.md` |
-| Hierarchical circuits and layout/netlists | `references/hierarchical-device-workflow.md` |
-| Gate profiles, evidence syntax, conditional physics checks | `references/verification-gates.md` |
-| Sweeps, optimization, robustness, reports | `references/optimization-and-reporting.md` |
-| Project artifacts, git, handoffs | `references/project-structure-and-git.md` |
-| MCP vs batch vs interactive control | `references/comsol-mcp-evaluation.md` |
-| Sources, licenses, trademarks, publication | `references/source-notes.md`, `references/legal-and-trademark-notes.md` |
-| Optional delegated roles | `references/subagent-orchestration.md` |
+| Choose a tool, discover capabilities, or add an integration | `references/tool-selection.md` |
+| Plan or advance component/circuit qualification | `references/engineering-workflow.md`; gate definitions in `references/verification-gates.md` |
+| COMSOL setup, paths, compile/batch, failure logs | `references/environment-and-runner.md` |
+| Materials, selections, ports, studies, mesh, datasets and exports | `references/wave-optics-port-models.md` |
+| Blank, zero or implausible fields; plotting and leakage | `references/comsol-field-physical-audit.md` |
+| Multiple excitations, complex S columns, phase/gauge alignment | `references/frequency-domain-source-sweeps.md` |
+| Geometry, port-window, dispersion or two-port diagnostic code | `references/modeling-recipes.md`; bends also `references/smooth-bend-geometry.md` |
+| Waveguide, bend, taper, coupler, ring or grating design | `references/device-family-workflows.md` |
+| MZI/aMZI/LT-aMZI, imbalance, FSR | `references/interferometer-workflows.md`; quantum-source work also `references/quantum-photonic-knowledge-base.md` |
+| Complex-S circuit composition or layout/connectivity | `references/hierarchical-device-workflow.md` |
+| Sweeps, optimization, corners or reports | `references/optimization-and-reporting.md` |
+| Project provenance, git and handoffs | `references/project-structure-and-git.md` |
+| Runtime internals, MATLAB, adapters, PDKs or maintenance | Follow the developer-document links in `references/tool-selection.md` |
+| Publication, attribution or third-party assets | `references/source-notes.md`, `references/legal-and-trademark-notes.md` |
+| Explicitly requested or otherwise authorized delegation | `references/subagent-orchestration.md`, then the relevant role only |
 
-## Use the Runtime
+## Use the available tools
 
-Prefer the installed CLI:
+For project services, prefer the installed `photonic` CLI or its MCP equivalent;
+they share package logic. A plain explanation or direct source edit needs no
+runtime. Check the live tool list or command help before assuming a capability
+exists. MCP prefixes and installed versions may differ between hosts.
 
-```powershell
-photonic --version
-photonic check --project-root <project> --json
-photonic status --project-root <project> --json
-photonic doctor --project-root <project> --json
-```
+- Existing project: `photonic status --project-root <project> --json`.
+- Environment diagnosis: `photonic doctor --project-root <project> --json`.
+- Reusable code: `photonic recipe list --json`, then inspect only the selected
+  recipe; MCP equivalents are `list_recipes`, `inspect_recipe`, `render_recipe`.
+- MCP discovery: read `photonic://server/manifest` and use `list_allowed_roots`
+  when paths matter. `run_java_batch` is a compatibility name for a **plan-only**
+  tool. It cannot run COMSOL.
 
-Create a project with `photonic init`; do not copy package business logic into
-the project. Available profiles are `pdk-first`, `layout-first`,
-`custom-device-first`, `matlab-legacy-layout`, and
-`matlab-assisted-design`.
+Keep large arrays, fields and meshes in files. Return compact diagnostics with
+artifact paths, units, source/run identity and hashes where relevant. Prefer
+existing validated recipes over rewriting numerical geometry or material fits;
+use reviewed source code for model construction beyond recipe coverage.
 
-Use these command groups as narrow workflow surfaces:
+## Preserve the optical invariants
 
-- contracts and models: `pdk`, `component`, `model`, `sparams`, `variation`;
-- topology and implementation: `circuit`, `netlist`, `layout`;
-- bounded external planning: `solver`, `matlab`;
-- campaigns and release: `optimize`, `package`, `testplan`, `tapeout`,
-  `measurement`;
-- evidence and publication safety: `gate`, `report`, `audit`.
+- Use the cheapest model that answers the question: analytic/reduced or circuit
+  screening, 2D EIM for suitable in-plane blocks, targeted 3D for vertical or
+  interaction physics. Identify the level in the result. Layout is not field
+  validation; full-device 3D is justified by the claim and convergence budget.
+- Before a large full-wave campaign, qualify the relevant straight-waveguide
+  and port baseline. Numeric ports need correctly bound Boundary Mode Analysis
+  steps before the driven study. Audit the finalized exterior partition:
+  disjoint ports, no port/open-boundary overlap, complete coverage, no internal
+  faces. Use justified local modal windows, not an arbitrary device side.
+- Material, boundary/PML, mesh or port changes invalidate dependent mode/phase
+  evidence. Boundary Mode fields support port-mode plots; a no-solve model has
+  no driven field. Check dataset, physics tag, expression and source index
+  before treating a blank plot as solver failure.
+- Reusable multiport models need complete complex S data over their declared
+  band with port order, modes, power normalization, time/phase convention and
+  reference planes. Keep every source column in the same built model/common
+  basis; independent rebuilding needs proved gauge alignment.
+- Close power separately for each excitation. Missing guided channels,
+  radiation, absorption and numerical error are distinct; `1-R-T` alone is not
+  measured absorption or radiation. Apply passivity, reciprocity and unitarity
+  only under their physical assumptions; see the gate reference.
+- A plot, dry-run, import, process exit or resolved evidence hash cannot by
+  itself prove performance. Single-wavelength/single-mesh diagnostics do not
+  establish broadband convergence. Never promote a scalar trace to a complete
+  multiport contract or silently connect incompatible modal conventions.
 
-Use `--json` for machine-facing work. Preserve exit-code meaning: invalid input
-2, unavailable 3, incompatible 4, execution failure 5, acceptance rejection 6,
-security violation 7, timeout 8.
+## Execute and finish at the right evidence level
 
-Legacy scripts remain compatibility routes. Do not fork new numerical,
-scaffold, parser, or audit logic into them.
+COMSOL Java source plus the local compile/batch runner is the existing execution
+baseline. Review a dry-run plan, paths, study order, resource budget and declared
+outputs before a solve. Continue under authorization already granted for that
+scope; obtain missing authorization only at the action that needs it. Keep
+licensed concurrency at one unless explicitly authorized and isolated.
 
-## Modeling Ladder
+The package's fixed-operation restriction applies to its public adapters and
+MCP tools. It does not prohibit writing, reviewing or running task-specific
+Java/Python/MATLAB source through an authorized development workflow. Do not
+turn untrusted model text or tool output into arbitrary executable operations.
 
-| Question | Default evidence level |
-|---|---|
-| topology, phase trend, FSR, coarse screening | analytic/reduced or circuit |
-| many qualified connected blocks | complete complex multiport S network |
-| individual passive in-plane block | 2D EIM, then targeted 3D |
-| vertical confinement, etch depth, free-space/grating coupling | 3D full wave |
-| placement, routing, connectivity, rules | layout and extracted netlist |
-| final corner behavior | circuit corners plus promoted full-wave checks |
-| fabricated behavior | calibrated measurement and correlation |
+Use `references/verification-gates.md` when accepting a component, circuit,
+layout, measurement or promoted result. Keep execution status separate from
+physical acceptance; report missing requirements as `blocked` for that claim.
+Configuration and mocked runtime tests are Phase A; licensed local validation
+is Phase B; additional commercial/remote integrations require their own Phase C
+adoption evidence. These phases do not automatically pass a device gate.
 
-Use a complete-device 3D solve only when the claim requires it, the device is
-small enough to converge, or interaction physics invalidates block separation.
-
-## Core Workflow
-
-### 1. Freeze the design intent
-
-Record topology, external ports and excitations, wavelength/frequency band,
-materials and cross-sections, polarization/modes, PDK/process stack, metrics,
-tolerances, variation variables, packaging/test constraints, and claim level.
-Keep a paper-faithful baseline separate from engineering optimization.
-
-### 2. Establish the port baseline
-
-Use the same cross-section and conventions as the intended device. Verify mode
-shape, `S21`, `S11`, phase, mesh, boundaries/PML, and reference planes. Numeric
-ports require one Boundary Mode Analysis per port before the driven study.
-Exclude ports from scattering/radiation selections.
-
-After geometry finalization, audit the exterior as an exact partition: port
-selections are mutually disjoint; port and open-boundary selections do not
-overlap; and their union is every exterior boundary, with no internal boundary.
-In a reduced 2D EIM model a validated core-only terminal segment may be the
-correct port face. If the numeric mode needs cladding support, use an explicitly
-segmented local modal window containing only that guide and justified cladding
-margin, never an arbitrary whole device side.
-
-After materials, boundaries, ports, PML, or mesh change, invalidate stale mode
-selection and phase evidence.
-
-### 3. Qualify building blocks
-
-Evaluate each bend, taper, splitter, coupler, ring, grating, transition, phase
-section, sensor, modulator, or inverse-designed region independently.
-
-For reusable models, export the complete complex S matrix across the declared
-band. Record port order, modes, normalization, time/phase convention,
-reference planes, model level, geometry/process parameters, validity range,
-source run, and hashes.
-
-For COMSOL source sweeps, obtain every input column from the same built model
-and common modal basis. Do not rebuild the second input independently without
-a proved gauge alignment.
-
-### 4. Compose before promoting
-
-```text
-qualified components
-  -> complete complex S data
-  -> validated manifest/netlist
-  -> circuit response and sensitivity
-  -> layout and extracted connectivity
-  -> selected full-wave promotion
-```
-
-Represent propagation phase/loss, bends, tapers, and transitions explicitly.
-An assembly connection is ideal and zero-length. Reject unknown endpoints,
-port reuse, dangling required ports, mode mismatches, incomplete matrices,
-wavelength-grid mismatches, non-finite values, and passivity violations.
-
-Geometry-part reuse does not transfer material, physics, mesh, selection, or
-component-qualification evidence.
-
-### 5. Run external tools reproducibly
-
-Probe first and render a dry-run plan. Use argument arrays, allowed roots,
-isolated runtime directories, timeouts, redaction, fixed entrypoints, and
-commercial concurrency one unless explicitly authorized otherwise.
-
-For COMSOL, Java API source plus the licensed local batch runner remains the
-trusted legacy execution path:
-
-```powershell
-& .\scripts\invoke-waveguide-java-batch.ps1 `
-  -JavaFile <model.java> `
-  -OutputFile <model.mph> `
-  -BatchLog <run.log> `
-  -DryRun
-```
-
-Remove `-DryRun` only after reviewing paths, selections, study order, cost,
-outputs, and authorization. Exit code zero without the declared output model
-and batch log is failure.
-
-For MATLAB, `matlab -batch` is the default controlled route. Phase A supports
-check/plan and fixed-wrapper contracts. An Engine import, shared-session name,
-product list, or compiled MEX file is not trusted execution. Run real batch,
-Engine, layout, FDFD, or RF fixtures only as authorized Phase B validation.
-LiveLink, Lumerical, instruments, Simulink, real PDK/tapeout, and remote/HPC
-work remain Phase C until their own adoption gates pass.
-
-### 6. Debug by evidence
-
-Check, in order:
-
-1. topology and path-length definition;
-2. material and geometry selections;
-3. port orientation, modes, study binding, normalization, reference planes;
-4. boundaries, background/PML, and missing channels;
-5. mesh and wavelength sampling;
-6. physics tag, expression, dataset, and source column;
-7. field-image physical sanity, including confinement and full-domain leakage;
-8. energy/passivity budget;
-9. only then geometry or optimizer settings.
-
-For each independent input, account for every intended output. Do not combine
-different excitations and label the sum one energy balance.
-
-### 7. Optimize at accepted fidelity
-
-Define objectives, constraints, budgets, failure handling, and robustness
-variables before searching. Preserve the baseline and checkpoints. Re-evaluate
-winners at higher fidelity and relevant process/temperature corners. A local,
-heuristic, surrogate, or noisy search winner is not a proved global optimum.
-The current runtime plans external parameter or pixel loops; it does not provide
-a native adjoint gradient interface or a qualified topology optimizer. Do not
-claim those capabilities until a backend-specific adoption gate and fixture pass.
-
-### 8. Inspect, gate, and hand off
-
-Execution status and acceptance status are independent. Inspect artifacts,
-hashes, units, conventions, convergence, tolerances, and limitations before
-changing a gate.
-
-Select the smallest base profile that covers the intended claim:
-
-- component: G0 and G2, plus G1 when the claim relies on solver ports or driven waves;
-- circuit: component plus G3-G4;
-- layout/tapeout: circuit plus G5;
-- measurement: M0-M2, plus M3 for correlation and M4 for recalibrated release.
-
-Add only the overlays the claim needs: G6 for a promoted higher-fidelity
-comparison, G7 for an optimization/robustness promotion, and G8 for formal
-delivery or publication. A defining gate in a selected base or overlay must
-`pass`; `not_applicable` is not a shortcut to profile completion.
-
-Leave gates outside the active profile inactive. Use `not_applicable` only where
-the gate definition permits it and record hashed applicability evidence. For a
-new `pass`, map every declared requirement to a nonempty project-relative file;
-the runtime records its SHA-256. A resolved evidence reference proves neither
-the file's scientific meaning nor physical acceptance.
-
-Handoff scripts/contracts, manifests, logs, tables, plots, run/gate state,
-limitations, and the exact next safe action. Keep proprietary or heavy
-artifacts out of public git unless explicitly authorized.
-
-## Phase and Claim Boundaries
-
-- Phase A proves the local core, contracts, mocks, safe plans, and compatibility
-  paths only after its acceptance suite passes.
-- Phase B is licensed local validation with controlled non-confidential
-  fixtures.
-- Phase C is bounded commercial, foundry, instrument, measurement, and remote
-  integration after backend-specific adoption gates.
-
-Use only the evidence label actually earned: analytic/reduced, circuit,
-layout-concept, PDK/DRC-checked, 2D EIM, 3D subassembly, full-device 3D,
-measured, calibrated, correlated, or recalibrated. These labels are not
-interchangeable.
-
-## Hard Guardrails
-
-- Never claim a field plot, import, dry-run, descriptor, product listing, or
-  process exit alone proves device performance.
-- Never substitute a scalar transmission trace for a complete multiport
-  contract.
-- Never connect incompatible modes, normalizations, or reference planes
-  silently.
-- Never expose arbitrary shell, Python, MATLAB, Lumerical, or instrument text.
-- Never mutate a frozen tapeout manifest or immutable raw measurement.
-- Never publish credentials, usernames, local paths, license data, instrument
-  addresses, NDA PDKs, proprietary papers/models, solver binaries, `.mph`,
-  compiled artifacts, logs, or caches without explicit authorization.
-- Never imply vendor affiliation or redistribute third-party assets outside
-  their license.
-- Keep delegated work bounded and independently auditable. Do not parallelize
-  licensed solver work without explicit authorization and proven isolation.
+Finish with the result, evidence level, artifacts, checks actually performed,
+remaining claim limits and next useful action. Preserve immutable measurements
+and frozen tapeout records. Keep proprietary/heavy artifacts and local secrets
+out of public git; publication and third-party redistribution retain their
+separate authorization and license requirements.

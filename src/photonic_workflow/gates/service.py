@@ -146,10 +146,12 @@ GATE_DEFINITIONS: dict[GateName, dict[str, Any]] = {
 GATE_PROFILES: dict[str, tuple[GateName, ...]] = {
     "component": (GateName.G0, GateName.G1, GateName.G2),
     "circuit": tuple(GateName(f"G{index}") for index in range(5)),
+    "layout-connectivity": (GateName.G0, GateName.G5),
     "layout-tapeout": tuple(GateName(f"G{index}") for index in range(6)),
     "promoted-full-wave-overlay": (GateName.G6,),
     "optimization-robustness-overlay": (GateName.G7,),
     "delivery-overlay": (GateName.G8,),
+    "measurement-capture": (GateName.M0, GateName.M1),
     "measurement": (GateName.M0, GateName.M1, GateName.M2),
     "correlation": (GateName.M0, GateName.M1, GateName.M2, GateName.M3),
     "recalibration": tuple(GateName(f"M{index}") for index in range(5)),
@@ -158,12 +160,14 @@ GATE_PROFILES: dict[str, tuple[GateName, ...]] = {
 _PROFILE_REQUIRED_PASS: dict[str, frozenset[GateName]] = {
     "component": frozenset({GateName.G0, GateName.G2}),
     "circuit": frozenset({GateName.G0, GateName.G2, GateName.G3, GateName.G4}),
+    "layout-connectivity": frozenset({GateName.G0, GateName.G5}),
     "layout-tapeout": frozenset(
         {GateName.G0, GateName.G2, GateName.G3, GateName.G4, GateName.G5}
     ),
     "promoted-full-wave-overlay": frozenset({GateName.G6}),
     "optimization-robustness-overlay": frozenset({GateName.G7}),
     "delivery-overlay": frozenset({GateName.G8}),
+    "measurement-capture": frozenset({GateName.M0, GateName.M1}),
     "measurement": frozenset({GateName.M0, GateName.M1, GateName.M2}),
     "correlation": frozenset({GateName.M0, GateName.M1, GateName.M2, GateName.M3}),
     "recalibration": frozenset(GateName(f"M{index}") for index in range(5)),
@@ -493,6 +497,9 @@ class GateLedger:
             "closure_profiles": profiles,
             "ledger_semantics": {
                 "advisory_requires_ledger": False,
+                "exploratory_requires_ledger": False,
+                "profiles_are_claim_scoped": True,
+                "profile_selection_is_persisted": False,
                 "recorded_status_is_preserved": True,
                 "strict_evidence_syntax": "CHECK=PROJECT_RELATIVE_PATH",
                 "strict_evidence_proves": "requirement references resolve to nonempty hashed files",
