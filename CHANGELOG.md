@@ -59,6 +59,13 @@ the host package version.
 
 Implementation and validation: OpenAI Codex.
 
+### Fixed
+
+- Read lazy CLI defaults through Click's public API so the compatibility
+  snapshot is stable across Click 8.4/8.5 without invoking default callables.
+- Recognize Windows short-path aliases for recipe output roots after rejecting
+  symlinks/junctions; preserve canonical containment and no-overwrite checks.
+
 ## [0.4.0] - 2026-08-01
 
 ### Added

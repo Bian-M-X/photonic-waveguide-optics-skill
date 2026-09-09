@@ -28,6 +28,11 @@ def checked_recipe_output(project_root: Path, output: Path) -> tuple[Path, str]:
                 raise SecurityViolationError(
                     f"recipe output path contains a symlink or junction: {cursor}"
                 )
+            # Windows short (8.3) names can refer to the allowed root without
+            # matching its resolved spelling. Check identity only after rejecting
+            # links, so an alias cannot waive the symlink/junction restriction.
+            if cursor.samefile(root):
+                break
         parent = cursor.parent
         if parent == cursor:
             raise InvalidInputError("recipe output is not lexically below project root")

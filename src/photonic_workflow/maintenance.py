@@ -74,6 +74,7 @@ def _cli_surface() -> dict[str, Any]:
     pending: list[tuple[str, click.Command]] = [("photonic", cli)]
     while pending:
         path, command = pending.pop()
+        context = click.Context(command)
         parameters: list[dict[str, Any]] = []
         for parameter in command.params:
             parameter_type = parameter.type
@@ -83,7 +84,9 @@ def _cli_surface() -> dict[str, Any]:
                 "type": getattr(parameter_type, "name", type(parameter_type).__name__),
                 "required": parameter.required,
                 "nargs": parameter.nargs,
-                "default": _stable_cli_default(parameter.default),
+                # Click 8.5 resolves implicit flag defaults lazily. Snapshot the
+                # public default without evaluating user-supplied callables.
+                "default": _stable_cli_default(parameter.get_default(context, call=False)),
             }
             choices = getattr(parameter_type, "choices", None)
             if choices is not None:

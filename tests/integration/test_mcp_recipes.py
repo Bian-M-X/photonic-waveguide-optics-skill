@@ -199,6 +199,28 @@ class McpRecipeTests(unittest.TestCase):
             )
         self.assertEqual(list(real.iterdir()), [])
 
+    @unittest.skipUnless(os.name == "nt", "Windows short-path fixture")
+    def test_windows_short_path_output_matches_allowed_root(self) -> None:
+        import ctypes
+        from ctypes import wintypes
+
+        get_short_path = ctypes.WinDLL("kernel32", use_last_error=True).GetShortPathNameW
+        get_short_path.argtypes = [wintypes.LPCWSTR, wintypes.LPWSTR, wintypes.DWORD]
+        get_short_path.restype = wintypes.DWORD
+        buffer = ctypes.create_unicode_buffer(32768)
+        length = get_short_path(str(self.write.resolve()), buffer, len(buffer))
+        self.assertGreater(length, 0, ctypes.get_last_error())
+        self.assertLess(length, len(buffer))
+        short_root = Path(buffer.value)
+        if short_root == self.write.resolve():
+            self.skipTest("short names are not enabled for the temporary directory")
+        receipt = self.call(
+            "render_recipe", request_file=str(FIXTURES / "li-silicon-1980.json"),
+            output=str(short_root / "short-path.json"),
+        )
+        target = self.write / "short-path.json"
+        self.assertEqual(receipt["sha256"], hashlib.sha256(target.read_bytes()).hexdigest())
+
 
 if __name__ == "__main__":
     unittest.main()

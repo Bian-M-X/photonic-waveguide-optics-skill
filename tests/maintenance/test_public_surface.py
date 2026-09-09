@@ -5,6 +5,9 @@ import re
 import tomllib
 import unittest
 from pathlib import Path
+from unittest.mock import Mock, patch
+
+import click
 
 from photonic_workflow import __version__
 from photonic_workflow.cli import cli
@@ -15,7 +18,7 @@ from photonic_workflow.compatibility import (
     CURRENT_CONTRACT_SCHEMA_VERSION,
     DEFAULT_CONTRACT_SCHEMA_VERSION,
 )
-from photonic_workflow.maintenance import contract_surface_snapshot
+from photonic_workflow.maintenance import _cli_surface, contract_surface_snapshot
 from photonic_workflow.mcp.server import (
     AGENT_RESOURCES,
     REFERENCE_RESOURCES,
@@ -63,6 +66,23 @@ EXPECTED_CLI_SURFACE = {
 
 
 class PublicSurfaceMaintenanceTests(unittest.TestCase):
+    def test_cli_snapshot_resolves_lazy_defaults_without_calling_them(self) -> None:
+        lazy = Mock(return_value="must not be evaluated")
+        command = click.Command("fixture", params=[
+            click.Option(["--flag"], is_flag=True),
+            click.Option(["--nullable"], is_flag=True, default=None),
+            click.Option(["--count"], count=True),
+            click.Option(["--lazy"], default=lazy),
+        ])
+        with patch("photonic_workflow.cli.cli", command):
+            parameters = _cli_surface()["photonic"]["parameters"]
+        defaults = {item["name"]: item["default"] for item in parameters}
+        self.assertIs(defaults["flag"], False)
+        self.assertIsNone(defaults["nullable"])
+        self.assertEqual(defaults["count"], 0)
+        self.assertEqual(defaults["lazy"], "<Mock>")
+        lazy.assert_not_called()
+
     def test_package_version_has_one_code_source_and_docs_are_current(self) -> None:
         with (REPOSITORY_ROOT / "pyproject.toml").open("rb") as handle:
             pyproject = tomllib.load(handle)
